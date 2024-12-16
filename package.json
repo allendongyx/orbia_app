@@ -12,6 +12,7 @@
     "@douyinfe/semi-icons": "^2.71.1",
     "@douyinfe/semi-icons-lab": "^2.71.1",
     "@douyinfe/semi-next": "^2.71.2",
+    "@douyinfe/semi-ui": "^2.71.2",
     "@semi-bot/semi-theme-orbia": "^1.0.2",
     "moment": "^2.30.1",
     "next": "14.2.20",
