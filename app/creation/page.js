@@ -1,11 +1,18 @@
 "use client";
 import React, { useState } from "react";
-import { Form, Col, Row, Button, Space, Steps } from "@douyinfe/semi-ui";
+import {
+  Form,
+  Col,
+  Row,
+  Button,
+  Space,
+  Steps,
+  Progress,
+  Tag,
+  Anchor,
+} from "@douyinfe/semi-ui";
 import { IconUpload } from "@douyinfe/semi-icons";
 import { IconToast } from "@douyinfe/semi-icons-lab";
-import { Anchor } from "@douyinfe/semi-ui";
-import { Progress } from "@douyinfe/semi-ui";
-import { Tag } from "@douyinfe/semi-ui";
 
 import Step1 from "./step1";
 import Step2 from "./step2";

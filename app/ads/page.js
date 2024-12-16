@@ -8,7 +8,11 @@ import {
   Row,
   Button,
   Space,
+  Progress,
   Steps,
+  Tag,
+  Table,
+  Avatar,
 } from "@douyinfe/semi-ui";
 import {
   IconUpload,
@@ -19,9 +23,6 @@ import {
 } from "@douyinfe/semi-icons";
 import { IconToast } from "@douyinfe/semi-icons-lab";
 import { Anchor } from "@douyinfe/semi-ui";
-import { Progress } from "@douyinfe/semi-ui";
-import { Tag } from "@douyinfe/semi-ui";
-import { Table, Avatar } from "@douyinfe/semi-ui";
 const { Text } = Typography;
 
 export default function Ads() {
@@ -205,9 +206,7 @@ export default function Ads() {
           <Button
             style={{ marginRight: 8 }}
             theme="solid"
-            onClick={()=>{
-              
-            }}
+            onClick={() => {}}
             type="primary"
             icon={<IconUpload />}
           >

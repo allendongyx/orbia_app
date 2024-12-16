@@ -8,9 +8,10 @@ import {
   Space,
   Steps,
   Tooltip,
+  Card,
+  Typography,
 } from "@douyinfe/semi-ui";
 import { IconToast } from "@douyinfe/semi-icons-lab";
-import { Card, Typography } from "@douyinfe/semi-ui";
 import { IconHelpCircle } from "@douyinfe/semi-icons";
 
 export default function Home() {

@@ -10,9 +10,6 @@ import {
 } from "@douyinfe/semi-ui";
 import { IconToast } from "@douyinfe/semi-icons-lab";
 // import TimeRangeSelector from '@components/time_range_selector';
-import { Tooltip, Tag } from "@douyinfe/semi-ui";
-import DatePickerTable from "../components/time_selector";
-import { IconHelpCircle } from "@douyinfe/semi-icons";
 import { IconUpload } from "@douyinfe/semi-icons";
 export default function Home() {
   const {
