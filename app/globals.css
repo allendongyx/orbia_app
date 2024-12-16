@@ -1,27 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@import "~@semi-bot/semi-theme-orbia/semi.min.css";
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--semi-color-text-0);
+  background-color: var(--semi-color-bg-0);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.time-table {
+  /* width: 100%; */
+  border-collapse: collapse;
+}
+.time-table th,
+.time-table td {
+  border: 1px solid #444;
+  text-align: center;
+  font-size: 12px;
+  width: 14px;
+}
+.time-table th,
+.time-table td.day-cell {
+  cursor: default; /* Change cursor style to indicate non-interactive */
+  user-select: none; /* Prevent text selection */
+}
+.time-table td.selected {
+  background-color: #9ee7ff; /* Blue for selected cells */
+}
+.time-table td.preview {
+  background-color: #add8e6; /* Lighter blue for preview selection */
 }
