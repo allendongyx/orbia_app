@@ -9,6 +9,7 @@ import {
   Layout,
   Breadcrumb,
   Skeleton,
+  Divider,
 } from "@douyinfe/semi-ui";
 import {
   IconStar,
@@ -16,6 +17,7 @@ import {
   IconSemiLogo,
   IconBytedanceLogo,
   IconBell,
+  IconBox,
   IconHelpCircle,
 } from "@douyinfe/semi-icons";
 import Link from "next/link";
@@ -51,23 +53,36 @@ const DefaultLayout = ({ children }) => {
           onSelect={(key) => console.log(key)}
           header={{
             logo: <IconSemiLogo style={{ height: "36px", fontSize: 36 }} />,
-            text: "Orbia 广告平台",
+            text: "Orbia",
           }}
           footer={
-            <Dropdown
-              position="bottomRight"
-              render={
-                <Dropdown.Menu>
-                  <Dropdown.Item>详情</Dropdown.Item>
-                  <Dropdown.Item>退出</Dropdown.Item>
-                </Dropdown.Menu>
-              }
-            >
-              <Avatar size="small" color="light-blue" style={{ margin: 4 }}>
-                BD
-              </Avatar>
-              <span>Bytedancer</span>
-            </Dropdown>
+            <div className="flex justify-center items-center">
+              <Link
+                target="_blank"
+                href="https://www.baidu.com"
+                className="flex justify-center items-center"
+              >
+                <IconHelpCircle className="text-white  cursor-pointer" />
+              </Link>
+              <Divider layout="vertical" margin="12px" />
+
+              <IconBell className="cursor-pointer text-white mr-4" />
+              <Dropdown
+                position="bottom"
+                render={
+                  <Dropdown.Menu>
+                    <Dropdown.Title>ID: 17849217429</Dropdown.Title>
+                    <Dropdown.Item icon={<IconBox />}>
+                      Logout
+                    </Dropdown.Item>{" "}
+                  </Dropdown.Menu>
+                }
+              >
+                <Button theme="outline" type="tertiary">
+                  User: allendongxy@gmail.com
+                </Button>
+              </Dropdown>
+            </div>
           }
         />
       </div>
@@ -77,13 +92,14 @@ const DefaultLayout = ({ children }) => {
   const LeftNav = () => (
     <Nav
       className="semi-always-dark h-full"
-      defaultSelectedKeys={["Home"]}
+      defaultSelectedKeys={["Dashboard"]}
       renderWrapper={({ itemElement, isSubNav, isInSubNav, props }) => {
         const routerMap = {
-          Home: "/",
           ADS: "/ads",
           KOL: "/kol",
           Dashboard: "/dashboard",
+          Wallet: "/wallet",
+          Settings: "/settings",
           "Nothing Here": "/nothing-here",
         };
         return (
@@ -97,18 +113,19 @@ const DefaultLayout = ({ children }) => {
       }}
       items={[
         {
-          text: "概览",
+          text: "Dashboard",
           icon: <IconSteps />,
           itemKey: "Dashboard",
         },
         {
           itemKey: "ADS",
-          text: "广告列表",
+          text: "Campaign",
           // className: "p-10",
           icon: <IconBreadcrumb />,
         },
-        { itemKey: "KOL", text: "KOL 推广", icon: <IconTreeSelect /> },
-        { itemKey: "Setting", text: "设置", icon: <IconBadge /> },
+        { itemKey: "KOL", text: "KOLs", icon: <IconTreeSelect /> },
+        { itemKey: "Wallet", text: "Wallet", icon: <IconTreeSelect /> },
+        { itemKey: "Settings", text: "Settings", icon: <IconBadge /> },
       ]}
       footer={{
         collapseButton: true,
@@ -116,27 +133,8 @@ const DefaultLayout = ({ children }) => {
     />
   );
 
-  const FooterContent = () => (
-    <>
-      <span
-        style={{
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <IconBytedanceLogo size="large" style={{ marginRight: "8px" }} />
-        <span>
-          Copyright © {new Date().getFullYear()} ByteDance. All Rights Reserved.{" "}
-        </span>
-      </span>
-      <span>
-        <span style={{ marginRight: "24px" }}>平台客服</span>
-        <span>反馈建议</span>
-      </span>
-    </>
-  );
   return (
-    <Layout style={{ border: "1px solid var(--semi-color-border)" }}>
+    <Layout>
       <TopHeader />
       <Layout>
         <Sider
@@ -154,17 +152,6 @@ const DefaultLayout = ({ children }) => {
           {children}
         </Content>
       </Layout>
-      {/* <Footer
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "20px",
-          color: "var(--semi-color-text-2)",
-          backgroundColor: "rgba(var(--semi-grey-0), 1)",
-        }}
-      >
-        <FooterContent />
-      </Footer> */}
     </Layout>
   );
 };

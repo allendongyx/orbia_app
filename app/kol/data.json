@@ -1,0 +1,322 @@
+[
+  {
+    "id": "1",
+    "name": "Vitalik Buterin",
+    "avatar": "VB",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/b07341496078432abf98e4dde303fefe~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733655&x-signature=lu%2FZM0obAbklNCRYI0sa8HjO9lI%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/aded01ed2ce64713ac34fa09ab278243~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733655&x-signature=rewB5K1m%2BN9NkgfuTA1GaXOjB8c%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "1",
+        "name": "Game"
+      },
+      {
+        "id": "2",
+        "name": "Defi"
+      }
+    ],
+    "spread_index": "94",
+    "follower_all": "4,142k",
+    "prospective_cmp": "35.32",
+    "prospective_vv": "0.53 $",
+    "offer_price": "32k $"
+  },
+  {
+    "id": "2",
+    "name": "Andreas M. Antonopoulos",
+    "avatar": "AMA",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-0813/o0Ww7NqkOIEABABl3EcL6BxIQ4GAilA25AefHe~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049726538&x-signature=oXTHDbfHjp1XPPxvpnWra%2BUYh%2B4%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-0813c001/oo4cAUvBCE5F9BnAUHwNANTx3C3ARieAiAAfIg~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049726538&x-signature=%2Fnw0jkNdhkGmaavuJIHgYB90p5I%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "3",
+        "name": "Education"
+      },
+      {
+        "id": "4",
+        "name": "Bitcoin"
+      }
+    ],
+    "spread_index": "88",
+    "follower_all": "3,560k",
+    "prospective_cmp": "28.15",
+    "prospective_vv": "0.42 $",
+    "offer_price": "10k $"
+  },
+  {
+    "id": "3",
+    "name": "Charles Hoskinson",
+    "avatar": "CH",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-dy/64bf2ab847b64b0ab7e587669bc4a355~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049726538&x-signature=JUgbtWYN71XtX%2BZDU3ClfwzFZCI%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-dy/i412d555977d24da88e2754bd6c1f3bfb~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049726538&x-signature=lHfBfhCziejm88Z9mqbgRt6Ay7E%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "5",
+        "name": "Cardano"
+      },
+      {
+        "id": "6",
+        "name": "Smart Contracts"
+      }
+    ],
+    "spread_index": "90",
+    "follower_all": "3,890k",
+    "prospective_cmp": "30.20",
+    "prospective_vv": "0.48 $",
+    "offer_price": "70k $"
+  },
+  {
+    "id": "4",
+    "name": "Roger Ver",
+    "avatar": "RV",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-0813/ogAAAOAGH1zIfCrA4CBzREwrNQZeiJigA9VAbQ~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733735&x-signature=6g7g6uamrbtqS42Z1C6SwL8%2Bi3M%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-0813c001/ok04mHDpIFA0QFC1cAECAfAAAkXYf9AqmRSGgM~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733735&x-signature=KJ09gVCjihT8zXABlZ5u%2FgIZnIc%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "7",
+        "name": "Bitcoin Cash"
+      },
+      {
+        "id": "8",
+        "name": "Crypto Advocacy"
+      }
+    ],
+    "spread_index": "85",
+    "follower_all": "3,200k",
+    "prospective_cmp": "26.50",
+    "prospective_vv": "0.39 $",
+    "offer_price": "20k $"
+  },
+  {
+    "id": "5",
+    "name": "Caitlin Long",
+    "avatar": "CL",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p3-star-fe-sign.byteimg.com/tos-cn-i-dy/8b92ad3836914451ab3c4bee18af0135~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733785&x-signature=fDhfx%2F%2B71wb%2BTDW9y8LyuJNkV7I%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p3-star-fe-sign.byteimg.com/tos-cn-i-0813c001/oA8FAfGAAgaALLCp6IeI2Sdel2RwenDJAICAcQ~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733785&x-signature=cgOc0t99fHx%2FCwErf9P7baFxwU0%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "9",
+        "name": "Digital Assets"
+      },
+      {
+        "id": "10",
+        "name": "Blockchain Law"
+      }
+    ],
+    "spread_index": "82",
+    "follower_all": "2,980k",
+    "prospective_cmp": "24.10",
+    "prospective_vv": "0.36 $",
+    "offer_price": "75k $"
+  },
+  {
+    "id": "6",
+    "name": "Brian Armstrong",
+    "avatar": "BA",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/65e16265a98c4ebb8d806f82df0e0901~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733785&x-signature=r6d0jcvejyNoeMrgWi423E2lhro%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/ee04f7cdd9c74836ad251d4858db620d~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733785&x-signature=TXapXrvycDUZBvouUfHwx297DP4%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "11",
+        "name": "Coinbase"
+      },
+      {
+        "id": "12",
+        "name": "Exchange"
+      }
+    ],
+    "spread_index": "92",
+    "follower_all": "4,010k",
+    "prospective_cmp": "33.80",
+    "prospective_vv": "0.51 $",
+    "offer_price": "92k $"
+  },
+  {
+    "id": "7",
+    "name": "Changpeng Zhao",
+    "avatar": "CZ",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-0813c001/osJELqIAPiZ1B4ia6xA9AIsiuQwAjyvmCAorq~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733869&x-signature=mtXPJJV9BglTkJvtOCx1SAYHAVE%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-i-0813/oMNBbZG0LA5PqTReA780AEVBIncQgaAeANKAfI~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733869&x-signature=PkanwmfI14PBdnzuw81epm5fvZs%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "13",
+        "name": "Binance"
+      },
+      {
+        "id": "14",
+        "name": "Crypto Trading"
+      }
+    ],
+    "spread_index": "96",
+    "follower_all": "4,300k",
+    "prospective_cmp": "36.20",
+    "prospective_vv": "0.55 $",
+    "offer_price": "42k $"
+  },
+  {
+    "id": "8",
+    "name": "Barry Silbert",
+    "avatar": "BS",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/061ae46010dc4de1960c8de273c1c32c~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733870&x-signature=E6ZZUrlvzRaLqX1aeNjfYN22Px4%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p9-star-fe-sign.byteimg.com/tos-cn-i-dy/44ed159add964935996d2b2b590ed1b6~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049733870&x-signature=LFOyltVFnQncY%2FEEflbZkSexoIc%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "15",
+        "name": "Digital Currency Group"
+      },
+      {
+        "id": "16",
+        "name": "Investment"
+      }
+    ],
+    "spread_index": "87",
+    "follower_all": "3,450k",
+    "prospective_cmp": "27.80",
+    "prospective_vv": "0.41 $",
+    "offer_price": "31k $"
+  },
+  {
+    "id": "9",
+    "name": "Gavin Wood",
+    "avatar": "GW",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p3-star-fe-sign.byteimg.com/tos-cn-p-0015/oYjeySBA9IOArNYfkmED4EDmBBlFEA33Bg6Ydo~tplv-9hvokabxw2-video_cover.webp?rk3s=5ec46d44&x-expires=2049734024&x-signature=DYz%2B7qxE%2Bncj7aB5w%2BCfp1j552M%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p3-star-fe-sign.byteimg.com/tos-cn-p-0015/oEVhQcLVQkarb9ehBNGAgwUE7dNAfC6BNPIGeO~tplv-9hvokabxw2-video_cover.webp?rk3s=5ec46d44&x-expires=2049734024&x-signature=opNJG%2BhS5c0sP5NBC0SLHouGefI%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "17",
+        "name": "Polkadot"
+      },
+      {
+        "id": "18",
+        "name": "Web3"
+      }
+    ],
+    "spread_index": "89",
+    "follower_all": "3,720k",
+    "prospective_cmp": "29.50",
+    "prospective_vv": "0.46 $",
+    "offer_price": "48k $"
+  },
+  {
+    "id": "10",
+    "name": "Joseph Lubin",
+    "avatar": "JL",
+    "masterpiece_works": [
+      {
+        "id": "1",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-p-0015/o8fbxW3jcAFOB2NlAILIfx0GReQh4w4ICDEnfQ~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049724443&x-signature=anU6pu5XHx5MgNb1lK3J7pJgzu4%3D"
+      },
+      {
+        "id": "2",
+        "type": "video",
+        "cover": "https://p26-star-fe-sign.byteimg.com/tos-cn-p-0015/o8fbxW3jcAFOB2NlAILIfx0GReQh4w4ICDEnfQ~tplv-9hvokabxw2-thumbnail.webp?rk3s=5ec46d44&x-expires=2049724443&x-signature=anU6pu5XHx5MgNb1lK3J7pJgzu4%3D"
+      }
+    ],
+    "tags": [
+      {
+        "id": "19",
+        "name": "ConsenSys"
+      },
+      {
+        "id": "20",
+        "name": "Ethereum Ecosystem"
+      }
+    ],
+    "spread_index": "91",
+    "follower_all": "3,950k",
+    "prospective_cmp": "32.40",
+    "prospective_vv": "0.50 $",
+    "offer_price": "30k $"
+  }
+]

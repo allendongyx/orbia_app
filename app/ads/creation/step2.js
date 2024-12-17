@@ -12,7 +12,7 @@ import {
 } from "@douyinfe/semi-ui";
 import { IconToast } from "@douyinfe/semi-icons-lab";
 // import TimeRangeSelector from '@components/time_range_selector';
-import DatePickerTable from "../components/time_selector";
+import DatePickerTable from "@/app/components/time_selector";
 import { IconHelpCircle } from "@douyinfe/semi-icons";
 export default function Home() {
   const {

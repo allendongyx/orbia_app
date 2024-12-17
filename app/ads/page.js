@@ -14,6 +14,8 @@ import {
   Table,
   Avatar,
 } from "@douyinfe/semi-ui";
+import Link from "next/link";
+
 import {
   IconUpload,
   IconTickCircle,
@@ -34,13 +36,13 @@ export default function Ads() {
       sorter: (a, b) => (a.name.length - b.name.length > 0 ? 1 : -1),
     },
     {
-      title: "名称",
+      title: "Name",
       dataIndex: "name",
       onFilter: (value, record) => record.name.includes(value),
       sorter: (a, b) => (a.name.length - b.name.length > 0 ? 1 : -1),
     },
     {
-      title: "状态",
+      title: "Status",
       dataIndex: "status",
 
       onFilter: (value, record) => record.name.includes(value),
@@ -181,12 +183,8 @@ export default function Ads() {
             labelPosition="left"
             render={({ formState, formApi, values }) => (
               <>
-                <Form.Input
-                  field="UserName"
-                  label="广告名称"
-                  className=" w-48"
-                />
-                <Form.Select field="Role" label="状态" className=" w-48">
+                <Form.Input field="UserName" label="Name" className=" w-48" />
+                <Form.Select field="Role" label="Status" className=" w-48">
                   <Form.Select.Option value="admin">全部</Form.Select.Option>
                   <Form.Select.Option value="user">投放中</Form.Select.Option>
                   <Form.Select.Option value="guest">待投放</Form.Select.Option>
@@ -203,17 +201,19 @@ export default function Ads() {
       </div>
       <Card className="mt-8">
         <div className="mb-4">
-          <Button
-            style={{ marginRight: 8 }}
-            theme="solid"
-            onClick={() => {}}
-            type="primary"
-            icon={<IconUpload />}
-          >
-            新建广告
-          </Button>
+          <Link href="/ads/creation">
+            <Button
+              style={{ marginRight: 8 }}
+              theme="solid"
+              onClick={() => {}}
+              type="primary"
+              icon={<IconUpload />}
+            >
+              New
+            </Button>
+          </Link>
           <Button theme="light" type="tertiary">
-            批量删除
+            Delete
           </Button>
         </div>
         <Table

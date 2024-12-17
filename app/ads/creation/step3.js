@@ -41,11 +41,11 @@ export default function Home() {
           <Col span={24}>
             <Form.Upload
               field="files"
-              label="证明文件（Upload）"
+              label="推广素材"
               action="//semi.design/api/upload"
             >
               <Button icon={<IconUpload />} theme="light">
-                点击上传
+                Upload
               </Button>
             </Form.Upload>
           </Col>

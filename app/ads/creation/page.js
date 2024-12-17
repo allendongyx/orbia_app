@@ -101,16 +101,16 @@ export default function Home() {
                       onChange={(i) => setCurrentStep(i)}
                     >
                       <Steps.Step
-                        title="第一步"
-                        description="This is a description"
+                        title="Step1"
+                        // description="This is a description"
                       />
                       <Steps.Step
-                        title="第二步"
-                        description="This is a description"
+                        title="Step2"
+                        // description="This is a description"
                       />
                       <Steps.Step
-                        title="完成"
-                        description="This is a description"
+                        title="Done"
+                        // description="This is a description"
                       />
                     </Steps>
                   </div>
