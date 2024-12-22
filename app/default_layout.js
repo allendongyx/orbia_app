@@ -59,7 +59,7 @@ const DefaultLayout = ({ children }) => {
             <div className="flex justify-center items-center">
               <Link
                 target="_blank"
-                href="https://www.baidu.com"
+                href="https://orbia.gitbook.io/orbia-docs"
                 className="flex justify-center items-center"
               >
                 <IconHelpCircle className="text-white  cursor-pointer" />

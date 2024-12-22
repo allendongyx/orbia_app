@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import DefaultLayout from "./default_layout";
+import Intercom from "@intercom/messenger-js-sdk";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -24,6 +25,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  Intercom({
+    app_id: "txdg4m0a",
+  });
   return (
     <html lang="en">
       <body
