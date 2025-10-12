@@ -41,12 +41,12 @@ export default function CampaignCreation() {
   const progressPercentage = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="relative flex flex-col h-full">
-      <div className="flex flex-1 gap-5 overflow-hidden pb-20">
+    <div className="flex h-full flex-col p-4">
+      <div className="flex flex-1 gap-5 pb-16 min-h-0">
         {/* Left Sidebar */}
-        <div className="w-56 flex-shrink-0">
+        <div className="w-56 flex-shrink-0 min-h-0">
           {/* Combined Progress & Estimate Card */}
-          <Card className="h-full overflow-auto">
+          <Card className="h-full overflow-y-auto">
             <CardContent className="p-3 space-y-3">
               {/* Progress */}
               <div className="space-y-1.5">
@@ -140,16 +140,16 @@ export default function CampaignCreation() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col rounded-md border border-gray-100 bg-white overflow-hidden shadow-sm">
+        <div className="flex flex-1 flex-col rounded-md border border-gray-100 bg-white shadow-sm min-h-0">
           {/* Header */}
-          <div className="border-b border-gray-100 bg-gray-50/50 px-4 py-2.5">
+          <div className="flex-shrink-0 border-b border-gray-100 bg-gray-50/50 px-4 py-2.5">
             <h1 className="text-sm font-semibold">
               {steps[currentStep].title}
             </h1>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-auto p-4">
+          {/* Content - Only this area scrolls */}
+          <div className="flex-1 overflow-y-auto p-4 min-h-0">
             <CurrentStepComponent />
           </div>
         </div>

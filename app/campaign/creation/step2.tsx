@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { HelpCircle, DollarSign, Calendar } from "lucide-react";
+import { HelpCircle, DollarSign, Calendar, Smartphone, Apple } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -21,10 +22,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import DatePickerTable from "@/app/components/time_selector";
+import LocationSelector from "@/components/common/location-selector";
+import LanguageSelector from "@/components/common/language-selector";
 
 export default function Step2() {
   const [budgetType, setBudgetType] = useState("daily");
   const [budgetAmount, setBudgetAmount] = useState("");
+  const [gender, setGender] = useState("all");
+  const [device, setDevice] = useState("all");
+  const [ageRanges, setAgeRanges] = useState(["all"]);
+  const [schedule, setSchedule] = useState("always");
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
   const ageGroups = [
     { id: "all", label: "All Ages (18+)" },
@@ -46,64 +55,54 @@ export default function Step2() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Location */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">Location</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Target specific countries or regions where your ads will be shown</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Select defaultValue="usa">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="usa">🇺🇸 United States</SelectItem>
-                <SelectItem value="uk">🇬🇧 United Kingdom</SelectItem>
-                <SelectItem value="canada">🇨🇦 Canada</SelectItem>
-                <SelectItem value="australia">🇦🇺 Australia</SelectItem>
-                <SelectItem value="singapore">🇸🇬 Singapore</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Location - Full Width */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium">地域</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>选择目标国家或地区，支持多选。可以选择整个国家或特定的省份/州</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          <LocationSelector 
+            value={selectedLocations}
+            onChange={setSelectedLocations}
+            placeholder="搜索或选择地域"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            您可以选择多个国家或地区来定位您的广告受众
+          </p>
+        </div>
 
-          {/* Language */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">Language</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Select the primary language of your target audience</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Select defaultValue="english">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="english">English</SelectItem>
-                <SelectItem value="spanish">Spanish</SelectItem>
-                <SelectItem value="french">French</SelectItem>
-                <SelectItem value="german">German</SelectItem>
-                <SelectItem value="mandarin">Mandarin</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Language - Full Width */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium">语言</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>选择目标受众的语言，支持多选</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          <LanguageSelector 
+            value={selectedLanguages}
+            onChange={setSelectedLanguages}
+            placeholder="搜索或选择语言"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            您可以选择多种语言来精确定位您的广告受众
+          </p>
         </div>
 
         {/* Age */}
@@ -121,19 +120,37 @@ export default function Step2() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
-            {ageGroups.map((group) => (
-              <Label key={group.id} htmlFor={group.id}>
-                <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                  <CardContent className="p-2">
-                    <div className="flex items-center space-x-1.5">
-                      <Checkbox id={group.id} defaultChecked={group.id === "all"} className="h-3.5 w-3.5" />
-                      <span className="text-xs font-medium">{group.label}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Label>
-            ))}
+          <div className="inline-flex border border-gray-200 overflow-hidden">
+            {ageGroups.map((group, index) => {
+              const isChecked = ageRanges.includes(group.id);
+              return (
+                <Label 
+                  key={group.id} 
+                  htmlFor={group.id}
+                  className={`relative cursor-pointer ${index > 0 ? 'border-l border-gray-200' : ''}`}
+                >
+                  <Checkbox 
+                    id={group.id} 
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setAgeRanges([...ageRanges, group.id]);
+                      } else {
+                        setAgeRanges(ageRanges.filter(id => id !== group.id));
+                      }
+                    }}
+                    className="sr-only"
+                  />
+                  <div className={`px-4 py-2.5 text-xs font-medium transition-all whitespace-nowrap ${
+                    isChecked 
+                      ? 'bg-gray-900 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}>
+                    {group.label}
+                  </div>
+                </Label>
+              );
+            })}
           </div>
         </div>
 
@@ -152,38 +169,19 @@ export default function Step2() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <RadioGroup defaultValue="all" className="grid grid-cols-3 gap-1.5">
-            <Label htmlFor="gender-all">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="all" id="gender-all" />
-                    <span className="text-xs font-medium">All</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-            <Label htmlFor="gender-male">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="male" id="gender-male" />
-                    <span className="text-xs font-medium">Male</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-            <Label htmlFor="gender-female">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="female" id="gender-female" />
-                    <span className="text-xs font-medium">Female</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-          </RadioGroup>
+          <ToggleGroup type="single" value={gender} onValueChange={(value) => value && setGender(value)}>
+            <ToggleGroupItem value="all" className="min-w-[100px] text-center">
+              All
+            </ToggleGroupItem>
+            <ToggleGroupItem value="male" className="min-w-[100px] text-center flex items-center justify-center gap-1.5">
+              <span>👨</span>
+              <span>Male</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="female" className="min-w-[100px] text-center flex items-center justify-center gap-1.5">
+              <span>👩</span>
+              <span>Female</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
 
         {/* Device */}
@@ -201,38 +199,19 @@ export default function Step2() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <RadioGroup defaultValue="all" className="grid grid-cols-3 gap-1.5">
-            <Label htmlFor="device-all">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="all" id="device-all" />
-                    <span className="text-xs font-medium">All Devices</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-            <Label htmlFor="device-android">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="android" id="device-android" />
-                    <span className="text-xs font-medium">Android</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-            <Label htmlFor="device-ios">
-              <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                <CardContent className="p-2">
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="ios" id="device-ios" />
-                    <span className="text-xs font-medium">iOS</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Label>
-          </RadioGroup>
+          <ToggleGroup type="single" value={device} onValueChange={(value) => value && setDevice(value)}>
+            <ToggleGroupItem value="all" className="min-w-[120px] text-center">
+              All Devices
+            </ToggleGroupItem>
+            <ToggleGroupItem value="android" className="min-w-[120px] text-center flex items-center justify-center gap-1.5">
+              <Smartphone className="h-3.5 w-3.5" />
+              <span>Android</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="ios" className="min-w-[120px] text-center flex items-center justify-center gap-1.5">
+              <Apple className="h-3.5 w-3.5" />
+              <span>iOS</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
@@ -344,39 +323,39 @@ export default function Step2() {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <RadioGroup defaultValue="always" className="gap-1.5">
-              <Label htmlFor="schedule-always">
-                <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-                  <CardContent className="p-2.5">
-                    <div className="flex items-center space-x-2.5">
-                      <RadioGroupItem value="always" id="schedule-always" />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">Run ads all day</div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Show ads 24/7 for maximum reach
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Label>
+            <div className="border border-gray-200 overflow-hidden max-w-2xl">
+              <div 
+                onClick={() => setSchedule("always")}
+                className={`cursor-pointer p-3.5 transition-all border-b border-gray-200 ${
+                  schedule === "always" 
+                    ? "bg-gray-900 text-white" 
+                    : "bg-white hover:bg-gray-50"
+                }`}
+              >
+                <div className="text-sm font-medium">Run ads all day</div>
+                <p className={`text-[11px] mt-0.5 ${
+                  schedule === "always" ? "text-gray-300" : "text-gray-500"
+                }`}>
+                  Show ads 24/7 for maximum reach
+                </p>
+              </div>
 
-              <Label htmlFor="schedule-custom">
-                <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-                  <CardContent className="p-2.5">
-                    <div className="flex items-center space-x-2.5">
-                      <RadioGroupItem value="custom" id="schedule-custom" />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">Custom schedule</div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Choose specific days and times
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Label>
-            </RadioGroup>
+              <div 
+                onClick={() => setSchedule("custom")}
+                className={`cursor-pointer p-3.5 transition-all ${
+                  schedule === "custom" 
+                    ? "bg-gray-900 text-white" 
+                    : "bg-white hover:bg-gray-50"
+                }`}
+              >
+                <div className="text-sm font-medium">Custom schedule</div>
+                <p className={`text-[11px] mt-0.5 ${
+                  schedule === "custom" ? "text-gray-300" : "text-gray-500"
+                }`}>
+                  Choose specific days and times
+                </p>
+              </div>
+            </div>
           </div>
 
           <DatePickerTable />

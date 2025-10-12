@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import DefaultLayout from "@/components/layout/default-layout";
 import { AuthProvider } from "@/contexts/auth-context";
-import { GlobalLoading } from "@/components/layout/global-loading";
 import Intercom from "@intercom/messenger-js-sdk";
 
 const geistSans = localFont({
@@ -36,7 +35,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <GlobalLoading />
           <DefaultLayout>{children}</DefaultLayout>
         </AuthProvider>
       </body>

@@ -1,0 +1,329 @@
+[
+  {
+    "id": "AF",
+    "name": "阿富汗",
+    "name_en": "Afghanistan",
+    "emoji": "🇦🇫",
+    "regions": [
+      { "id": "AF-KAB", "name": "喀布尔", "name_en": "Kabul", "type": "province" },
+      { "id": "AF-HER", "name": "赫拉特", "name_en": "Herat", "type": "province" },
+      { "id": "AF-KAN", "name": "坎大哈", "name_en": "Kandahar", "type": "province" }
+    ]
+  },
+  {
+    "id": "AL",
+    "name": "阿尔巴尼亚",
+    "name_en": "Albania",
+    "emoji": "🇦🇱",
+    "regions": [
+      { "id": "AL-01", "name": "地拉那", "name_en": "Tirana", "type": "province" },
+      { "id": "AL-02", "name": "都拉斯", "name_en": "Durrës", "type": "province" }
+    ]
+  },
+  {
+    "id": "DZ",
+    "name": "阿尔及利亚",
+    "name_en": "Algeria",
+    "emoji": "🇩🇿",
+    "regions": [
+      { "id": "DZ-16", "name": "阿尔及尔", "name_en": "Algiers", "type": "province" },
+      { "id": "DZ-09", "name": "奥兰", "name_en": "Oran", "type": "province" }
+    ]
+  },
+  {
+    "id": "AR",
+    "name": "阿根廷",
+    "name_en": "Argentina",
+    "emoji": "🇦🇷",
+    "regions": [
+      { "id": "AR-C", "name": "布宜诺斯艾利斯", "name_en": "Buenos Aires", "type": "autonomous city" },
+      { "id": "AR-B", "name": "布宜诺斯艾利斯省", "name_en": "Buenos Aires Province", "type": "province" },
+      { "id": "AR-X", "name": "科尔多瓦", "name_en": "Córdoba", "type": "province" },
+      { "id": "AR-S", "name": "圣菲", "name_en": "Santa Fe", "type": "province" },
+      { "id": "AR-M", "name": "门多萨", "name_en": "Mendoza", "type": "province" }
+    ]
+  },
+  {
+    "id": "AU",
+    "name": "澳大利亚",
+    "name_en": "Australia",
+    "emoji": "🇦🇺",
+    "regions": [
+      { "id": "AU-NSW", "name": "新南威尔士", "name_en": "New South Wales", "type": "state" },
+      { "id": "AU-VIC", "name": "维多利亚", "name_en": "Victoria", "type": "state" },
+      { "id": "AU-QLD", "name": "昆士兰", "name_en": "Queensland", "type": "state" },
+      { "id": "AU-WA", "name": "西澳大利亚", "name_en": "Western Australia", "type": "state" },
+      { "id": "AU-SA", "name": "南澳大利亚", "name_en": "South Australia", "type": "state" }
+    ]
+  },
+  {
+    "id": "BR",
+    "name": "巴西",
+    "name_en": "Brazil",
+    "emoji": "🇧🇷",
+    "regions": [
+      { "id": "BR-SP", "name": "圣保罗", "name_en": "São Paulo", "type": "state" },
+      { "id": "BR-RJ", "name": "里约热内卢", "name_en": "Rio de Janeiro", "type": "state" },
+      { "id": "BR-MG", "name": "米纳斯吉拉斯", "name_en": "Minas Gerais", "type": "state" },
+      { "id": "BR-BA", "name": "巴伊亚", "name_en": "Bahia", "type": "state" }
+    ]
+  },
+  {
+    "id": "CA",
+    "name": "加拿大",
+    "name_en": "Canada",
+    "emoji": "🇨🇦",
+    "regions": [
+      { "id": "CA-ON", "name": "安大略", "name_en": "Ontario", "type": "province" },
+      { "id": "CA-QC", "name": "魁北克", "name_en": "Quebec", "type": "province" },
+      { "id": "CA-BC", "name": "不列颠哥伦比亚", "name_en": "British Columbia", "type": "province" },
+      { "id": "CA-AB", "name": "艾伯塔", "name_en": "Alberta", "type": "province" }
+    ]
+  },
+  {
+    "id": "CN",
+    "name": "中国",
+    "name_en": "China",
+    "emoji": "🇨🇳",
+    "regions": [
+      { "id": "CN-BJ", "name": "北京", "name_en": "Beijing", "type": "municipality" },
+      { "id": "CN-SH", "name": "上海", "name_en": "Shanghai", "type": "municipality" },
+      { "id": "CN-GD", "name": "广东", "name_en": "Guangdong", "type": "province" },
+      { "id": "CN-ZJ", "name": "浙江", "name_en": "Zhejiang", "type": "province" },
+      { "id": "CN-JS", "name": "江苏", "name_en": "Jiangsu", "type": "province" },
+      { "id": "CN-SD", "name": "山东", "name_en": "Shandong", "type": "province" }
+    ]
+  },
+  {
+    "id": "FR",
+    "name": "法国",
+    "name_en": "France",
+    "emoji": "🇫🇷",
+    "regions": [
+      { "id": "FR-IDF", "name": "法兰西岛", "name_en": "Île-de-France", "type": "region" },
+      { "id": "FR-ARA", "name": "奥弗涅-罗纳-阿尔卑斯", "name_en": "Auvergne-Rhône-Alpes", "type": "region" },
+      { "id": "FR-PAC", "name": "普罗旺斯-阿尔卑斯-蓝色海岸", "name_en": "Provence-Alpes-Côte d'Azur", "type": "region" }
+    ]
+  },
+  {
+    "id": "DE",
+    "name": "德国",
+    "name_en": "Germany",
+    "emoji": "🇩🇪",
+    "regions": [
+      { "id": "DE-BE", "name": "柏林", "name_en": "Berlin", "type": "state" },
+      { "id": "DE-BY", "name": "巴伐利亚", "name_en": "Bavaria", "type": "state" },
+      { "id": "DE-HE", "name": "黑森", "name_en": "Hesse", "type": "state" },
+      { "id": "DE-NW", "name": "北莱茵-威斯特法伦", "name_en": "North Rhine-Westphalia", "type": "state" }
+    ]
+  },
+  {
+    "id": "IN",
+    "name": "印度",
+    "name_en": "India",
+    "emoji": "🇮🇳",
+    "regions": [
+      { "id": "IN-DL", "name": "德里", "name_en": "Delhi", "type": "union territory" },
+      { "id": "IN-MH", "name": "马哈拉施特拉", "name_en": "Maharashtra", "type": "state" },
+      { "id": "IN-KA", "name": "卡纳塔克", "name_en": "Karnataka", "type": "state" },
+      { "id": "IN-TN", "name": "泰米尔纳德", "name_en": "Tamil Nadu", "type": "state" }
+    ]
+  },
+  {
+    "id": "ID",
+    "name": "印度尼西亚",
+    "name_en": "Indonesia",
+    "emoji": "🇮🇩",
+    "regions": [
+      { "id": "ID-JK", "name": "雅加达", "name_en": "Jakarta", "type": "province" },
+      { "id": "ID-JB", "name": "西爪哇", "name_en": "West Java", "type": "province" },
+      { "id": "ID-JT", "name": "中爪哇", "name_en": "Central Java", "type": "province" },
+      { "id": "ID-JI", "name": "东爪哇", "name_en": "East Java", "type": "province" }
+    ]
+  },
+  {
+    "id": "IT",
+    "name": "意大利",
+    "name_en": "Italy",
+    "emoji": "🇮🇹",
+    "regions": [
+      { "id": "IT-62", "name": "拉齐奥", "name_en": "Lazio", "type": "region" },
+      { "id": "IT-25", "name": "伦巴第", "name_en": "Lombardy", "type": "region" },
+      { "id": "IT-82", "name": "西西里", "name_en": "Sicily", "type": "region" }
+    ]
+  },
+  {
+    "id": "JP",
+    "name": "日本",
+    "name_en": "Japan",
+    "emoji": "🇯🇵",
+    "regions": [
+      { "id": "JP-13", "name": "东京", "name_en": "Tokyo", "type": "prefecture" },
+      { "id": "JP-27", "name": "大阪", "name_en": "Osaka", "type": "prefecture" },
+      { "id": "JP-14", "name": "神奈川", "name_en": "Kanagawa", "type": "prefecture" },
+      { "id": "JP-23", "name": "爱知", "name_en": "Aichi", "type": "prefecture" }
+    ]
+  },
+  {
+    "id": "KR",
+    "name": "韩国",
+    "name_en": "South Korea",
+    "emoji": "🇰🇷",
+    "regions": [
+      { "id": "KR-11", "name": "首尔", "name_en": "Seoul", "type": "city" },
+      { "id": "KR-41", "name": "京畿道", "name_en": "Gyeonggi", "type": "province" },
+      { "id": "KR-26", "name": "釜山", "name_en": "Busan", "type": "city" },
+      { "id": "KR-27", "name": "大邱", "name_en": "Daegu", "type": "city" }
+    ]
+  },
+  {
+    "id": "MX",
+    "name": "墨西哥",
+    "name_en": "Mexico",
+    "emoji": "🇲🇽",
+    "regions": [
+      { "id": "MX-CMX", "name": "墨西哥城", "name_en": "Mexico City", "type": "federal entity" },
+      { "id": "MX-JAL", "name": "哈利斯科", "name_en": "Jalisco", "type": "state" },
+      { "id": "MX-NLE", "name": "新莱昂", "name_en": "Nuevo León", "type": "state" }
+    ]
+  },
+  {
+    "id": "NL",
+    "name": "荷兰",
+    "name_en": "Netherlands",
+    "emoji": "🇳🇱",
+    "regions": [
+      { "id": "NL-NH", "name": "北荷兰", "name_en": "North Holland", "type": "province" },
+      { "id": "NL-ZH", "name": "南荷兰", "name_en": "South Holland", "type": "province" },
+      { "id": "NL-UT", "name": "乌得勒支", "name_en": "Utrecht", "type": "province" }
+    ]
+  },
+  {
+    "id": "RU",
+    "name": "俄罗斯",
+    "name_en": "Russia",
+    "emoji": "🇷🇺",
+    "regions": [
+      { "id": "RU-MOW", "name": "莫斯科", "name_en": "Moscow", "type": "federal city" },
+      { "id": "RU-SPE", "name": "圣彼得堡", "name_en": "Saint Petersburg", "type": "federal city" },
+      { "id": "RU-MOS", "name": "莫斯科州", "name_en": "Moscow Oblast", "type": "oblast" }
+    ]
+  },
+  {
+    "id": "SG",
+    "name": "新加坡",
+    "name_en": "Singapore",
+    "emoji": "🇸🇬",
+    "regions": [
+      { "id": "SG-01", "name": "中区", "name_en": "Central Region", "type": "region" },
+      { "id": "SG-02", "name": "东区", "name_en": "East Region", "type": "region" },
+      { "id": "SG-03", "name": "北区", "name_en": "North Region", "type": "region" },
+      { "id": "SG-04", "name": "东北区", "name_en": "North-East Region", "type": "region" },
+      { "id": "SG-05", "name": "西区", "name_en": "West Region", "type": "region" }
+    ]
+  },
+  {
+    "id": "ES",
+    "name": "西班牙",
+    "name_en": "Spain",
+    "emoji": "🇪🇸",
+    "regions": [
+      { "id": "ES-MD", "name": "马德里", "name_en": "Madrid", "type": "autonomous community" },
+      { "id": "ES-CT", "name": "加泰罗尼亚", "name_en": "Catalonia", "type": "autonomous community" },
+      { "id": "ES-AN", "name": "安达卢西亚", "name_en": "Andalusia", "type": "autonomous community" }
+    ]
+  },
+  {
+    "id": "SE",
+    "name": "瑞典",
+    "name_en": "Sweden",
+    "emoji": "🇸🇪",
+    "regions": [
+      { "id": "SE-AB", "name": "斯德哥尔摩", "name_en": "Stockholm", "type": "county" },
+      { "id": "SE-O", "name": "西约特兰", "name_en": "Västra Götaland", "type": "county" },
+      { "id": "SE-M", "name": "斯科讷", "name_en": "Skåne", "type": "county" }
+    ]
+  },
+  {
+    "id": "CH",
+    "name": "瑞士",
+    "name_en": "Switzerland",
+    "emoji": "🇨🇭",
+    "regions": [
+      { "id": "CH-ZH", "name": "苏黎世", "name_en": "Zurich", "type": "canton" },
+      { "id": "CH-BE", "name": "伯尔尼", "name_en": "Bern", "type": "canton" },
+      { "id": "CH-GE", "name": "日内瓦", "name_en": "Geneva", "type": "canton" }
+    ]
+  },
+  {
+    "id": "TH",
+    "name": "泰国",
+    "name_en": "Thailand",
+    "emoji": "🇹🇭",
+    "regions": [
+      { "id": "TH-10", "name": "曼谷", "name_en": "Bangkok", "type": "province" },
+      { "id": "TH-50", "name": "清迈", "name_en": "Chiang Mai", "type": "province" },
+      { "id": "TH-83", "name": "普吉", "name_en": "Phuket", "type": "province" }
+    ]
+  },
+  {
+    "id": "TR",
+    "name": "土耳其",
+    "name_en": "Turkey",
+    "emoji": "🇹🇷",
+    "regions": [
+      { "id": "TR-34", "name": "伊斯坦布尔", "name_en": "Istanbul", "type": "province" },
+      { "id": "TR-06", "name": "安卡拉", "name_en": "Ankara", "type": "province" },
+      { "id": "TR-35", "name": "伊兹密尔", "name_en": "Izmir", "type": "province" }
+    ]
+  },
+  {
+    "id": "AE",
+    "name": "阿联酋",
+    "name_en": "United Arab Emirates",
+    "emoji": "🇦🇪",
+    "regions": [
+      { "id": "AE-DU", "name": "迪拜", "name_en": "Dubai", "type": "emirate" },
+      { "id": "AE-AZ", "name": "阿布扎比", "name_en": "Abu Dhabi", "type": "emirate" },
+      { "id": "AE-SH", "name": "沙迦", "name_en": "Sharjah", "type": "emirate" }
+    ]
+  },
+  {
+    "id": "GB",
+    "name": "英国",
+    "name_en": "United Kingdom",
+    "emoji": "🇬🇧",
+    "regions": [
+      { "id": "GB-ENG", "name": "英格兰", "name_en": "England", "type": "country" },
+      { "id": "GB-SCT", "name": "苏格兰", "name_en": "Scotland", "type": "country" },
+      { "id": "GB-WLS", "name": "威尔士", "name_en": "Wales", "type": "country" },
+      { "id": "GB-NIR", "name": "北爱尔兰", "name_en": "Northern Ireland", "type": "country" }
+    ]
+  },
+  {
+    "id": "US",
+    "name": "美国",
+    "name_en": "United States",
+    "emoji": "🇺🇸",
+    "regions": [
+      { "id": "US-CA", "name": "加利福尼亚", "name_en": "California", "type": "state" },
+      { "id": "US-TX", "name": "得克萨斯", "name_en": "Texas", "type": "state" },
+      { "id": "US-NY", "name": "纽约", "name_en": "New York", "type": "state" },
+      { "id": "US-FL", "name": "佛罗里达", "name_en": "Florida", "type": "state" },
+      { "id": "US-IL", "name": "伊利诺伊", "name_en": "Illinois", "type": "state" },
+      { "id": "US-WA", "name": "华盛顿", "name_en": "Washington", "type": "state" }
+    ]
+  },
+  {
+    "id": "VN",
+    "name": "越南",
+    "name_en": "Vietnam",
+    "emoji": "🇻🇳",
+    "regions": [
+      { "id": "VN-HN", "name": "河内", "name_en": "Hanoi", "type": "municipality" },
+      { "id": "VN-SG", "name": "胡志明市", "name_en": "Ho Chi Minh City", "type": "municipality" },
+      { "id": "VN-DN", "name": "岘港", "name_en": "Da Nang", "type": "municipality" }
+    ]
+  }
+]
+

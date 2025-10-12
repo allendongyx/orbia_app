@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { HelpCircle, Globe, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +15,9 @@ import {
 } from "@/components/ui/tooltip";
 
 export default function Step1() {
+  const [promotionObjective, setPromotionObjective] = useState("website");
+  const [optimizationGoal, setOptimizationGoal] = useState("traffic");
+
   return (
     <div className="max-w-5xl space-y-5">
       {/* Campaign Name */}
@@ -70,69 +74,75 @@ export default function Step1() {
           </TooltipProvider>
         </div>
 
-        <RadioGroup defaultValue="website" className="gap-3">
-          <Label htmlFor="website">
-            <Card className="cursor-pointer transition-all hover:border-blue-700 hover:shadow-sm border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2.5">
-                  <RadioGroupItem value="website" id="website" className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Globe className="h-4 w-4 text-blue-700" />
-                      <span className="font-semibold text-sm">
-                        Promote Your Website
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Drive more traffic to your landing pages</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Encourage valuable actions on your website</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Track conversions and ROI effectively</span>
-                      </div>
-                    </div>
+        <RadioGroup value={promotionObjective} onValueChange={setPromotionObjective} className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-gray-200 overflow-hidden">
+          <Label 
+            htmlFor="website" 
+            className={`h-full cursor-pointer p-4 transition-all border-r border-gray-200 ${
+              promotionObjective === "website" 
+                ? "bg-gray-900 text-white" 
+                : "bg-white hover:bg-gray-50"
+            }`}
+          >
+            <RadioGroupItem value="website" id="website" className="sr-only" />
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-semibold text-sm">
+                    Promote Your Website
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs opacity-70">
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Drive more traffic to your landing pages</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Encourage valuable actions on your website</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Track conversions and ROI effectively</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Label>
 
-          <Label htmlFor="app">
-            <Card className="cursor-pointer transition-all hover:border-blue-700 hover:shadow-sm border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2.5">
-                  <RadioGroupItem value="app" id="app" className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Smartphone className="h-4 w-4 text-blue-700" />
-                      <span className="font-semibold text-sm">
-                        Promote Your App
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Increase app installs cost-effectively</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Drive in-app actions and engagement</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-600">✓</span>
-                        <span>Target mobile-first audiences</span>
-                      </div>
-                    </div>
+          <Label 
+            htmlFor="app" 
+            className={`h-full cursor-pointer p-4 transition-all ${
+              promotionObjective === "app" 
+                ? "bg-gray-900 text-white" 
+                : "bg-white hover:bg-gray-50"
+            }`}
+          >
+            <RadioGroupItem value="app" id="app" className="sr-only" />
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <Smartphone className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-semibold text-sm">
+                    Promote Your App
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs opacity-70">
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Increase app installs cost-effectively</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Drive in-app actions and engagement</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0">✓</span>
+                    <span>Target mobile-first audiences</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Label>
         </RadioGroup>
       </div>
@@ -155,53 +165,62 @@ export default function Step1() {
           </TooltipProvider>
         </div>
 
-        <RadioGroup defaultValue="traffic" className="gap-1.5">
-          <Label htmlFor="traffic">
-            <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-              <CardContent className="p-2.5">
-                <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value="traffic" id="traffic" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Traffic</div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Maximize clicks to your website
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <RadioGroup value={optimizationGoal} onValueChange={setOptimizationGoal} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border border-gray-200 overflow-hidden">
+          <Label 
+            htmlFor="traffic" 
+            className={`h-full cursor-pointer lg:border-r border-gray-200 p-4 transition-all ${
+              optimizationGoal === "traffic" 
+                ? "bg-gray-900 text-white" 
+                : "bg-white hover:bg-gray-50"
+            }`}
+          >
+            <RadioGroupItem value="traffic" id="traffic" className="sr-only" />
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold">Traffic</div>
+                <p className="text-xs opacity-70 mt-1">
+                  Maximize clicks to your website
+                </p>
+              </div>
+            </div>
           </Label>
 
-          <Label htmlFor="conversion">
-            <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-              <CardContent className="p-2.5">
-                <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value="conversion" id="conversion" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Website Conversions</div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Optimize for specific actions on your site
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <Label 
+            htmlFor="conversion" 
+            className={`h-full cursor-pointer lg:border-r border-gray-200 border-t md:border-t-0 p-4 transition-all ${
+              optimizationGoal === "conversion" 
+                ? "bg-gray-900 text-white" 
+                : "bg-white hover:bg-gray-50"
+            }`}
+          >
+            <RadioGroupItem value="conversion" id="conversion" className="sr-only" />
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold">Website Conversions</div>
+                <p className="text-xs opacity-70 mt-1">
+                  Optimize for specific actions on your site
+                </p>
+              </div>
+            </div>
           </Label>
 
-          <Label htmlFor="form">
-            <Card className="cursor-pointer transition-all hover:border-blue-700 hover:bg-gray-50/50 border rounded-md has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-              <CardContent className="p-2.5">
-                <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value="form" id="form" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Lead Generation</div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Collect leads through forms
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <Label 
+            htmlFor="form" 
+            className={`h-full cursor-pointer border-t lg:border-t-0 p-4 transition-all ${
+              optimizationGoal === "form" 
+                ? "bg-gray-900 text-white" 
+                : "bg-white hover:bg-gray-50"
+            }`}
+          >
+            <RadioGroupItem value="form" id="form" className="sr-only" />
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold">Lead Generation</div>
+                <p className="text-xs opacity-70 mt-1">
+                  Collect leads through forms
+                </p>
+              </div>
+            </div>
           </Label>
         </RadioGroup>
       </div>
