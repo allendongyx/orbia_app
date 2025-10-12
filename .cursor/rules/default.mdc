@@ -1,0 +1,525 @@
+---
+alwaysApply: false
+---
+# UI 设计规范
+
+本项目采用现代化设计系统，使用 Tailwind CSS 和 Shadcn/ui 构建，强调无边框设计、渐变色和流畅动画。
+
+## 配色方案
+
+### 主色系
+- **品牌色**：蓝色渐变 `from-blue-500 to-blue-600`
+- **主按钮**：使用渐变色 `bg-gradient-to-r from-blue-500 to-blue-600`
+- **强调色**：`text-blue-600`
+
+### 功能色系（渐变）
+- **蓝色系**：`from-blue-500 to-blue-600` - 广告、营销相关
+- **紫色系**：`from-purple-500 to-purple-600` - 数据、分析相关
+- **绿色系**：`from-green-500 to-green-600` - 财务、增长相关
+- **橙色系**：`from-orange-500 to-orange-600` - 曝光、流量相关
+
+### 中性色
+- **页面背景**：`bg-gradient-to-br from-gray-50 via-white to-gray-50`（淡灰渐变）
+- **侧边栏背景**：`bg-gray-50`（浅灰色，现代化设计）
+- **卡片背景**：`bg-white`（纯白色）
+- **深色卡片**：`bg-gradient-to-br from-gray-900 to-gray-800`（深色渐变）
+- **文字主色**：`text-gray-900`
+- **文字副色**：`text-gray-600` 或 `text-gray-500`
+- **边框色**：`border-gray-200`（最小化使用）
+
+### 状态色
+- **成功/增长**：`text-green-600` + `ArrowUpRight` 图标
+- **警告/下降**：`text-red-600` + `ArrowDownRight` 图标
+- **信息**：`text-blue-600`
+- **警告徽章**：`bg-yellow-100 text-yellow-700`
+- **错误徽章**：`bg-red-100 text-red-700`
+
+## 布局规范
+
+### 整体布局
+- **侧边栏**：固定宽度 `w-64`（256px），浅色背景 `bg-gray-50`
+- **Header**：高度 `h-16`，毛玻璃效果 `bg-white/80 backdrop-blur-md`
+- **主内容区**：`p-8`，渐变背景
+- **响应式**：移动端侧边栏可折叠
+
+### 网格系统
+- **统计卡片**：`grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4`
+- **快速操作**：`grid-cols-1 md:grid-cols-3 gap-4`
+- **主次布局**：`grid-cols-1 lg:grid-cols-3 gap-6`（2:1 比例）
+- **两栏布局**：`grid-cols-1 md:grid-cols-2 gap-6`
+
+### 间距规范
+- **页面级间距**：`space-y-6`（24px）
+- **区块间距**：`gap-6`（24px）
+- **卡片内间距**：`p-6`（24px）
+- **小组件间距**：`gap-2`（8px）或 `gap-3`（12px）
+- **图标与文字**：`gap-2`（8px）
+
+## 组件规范
+
+### 卡片 (Card)
+
+**基础卡片**（无边框设计）：
+```tsx
+<Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+  <CardHeader>
+    <CardTitle className="text-lg">标题</CardTitle>
+  </CardHeader>
+  <CardContent>
+    内容
+  </CardContent>
+</Card>
+```
+
+**统计卡片**（带渐变图标）：
+```tsx
+<Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-600 opacity-5 rounded-full -mr-16 -mt-16" />
+  <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <CardTitle className="text-sm font-medium text-gray-600">指标名称</CardTitle>
+    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+      <Icon className="h-4 w-4 text-white" />
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="text-3xl font-bold text-gray-900">数据</div>
+    <div className="flex items-center gap-1 mt-2">
+      <ArrowUpRight className="h-4 w-4 text-green-600" />
+      <span className="text-sm font-medium text-green-600">+12.5%</span>
+    </div>
+  </CardContent>
+</Card>
+```
+
+**特性**：
+- ✅ **无边框**：`border-0`
+- ✅ **轻阴影**：`shadow-sm` → `hover:shadow-md`
+- ✅ **圆角**：`rounded-xl`（更大的圆角）
+- ✅ **渐变装饰**：背景渐变圆形
+- ✅ **渐变图标容器**：彩色渐变背景
+
+### 按钮 (Button)
+
+**主按钮（渐变）**：
+```tsx
+<Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0">
+  按钮文字
+  <ArrowUpRight className="ml-1 h-4 w-4" />
+</Button>
+```
+
+**次要按钮**：
+```tsx
+<Button variant="outline" className="rounded-xl">
+  按钮文字
+</Button>
+```
+
+**图标按钮**：
+```tsx
+<Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
+  <Icon className="h-5 w-5" />
+</Button>
+```
+
+**特性**：
+- ✅ 主按钮使用渐变色
+- ✅ 更大的圆角 `rounded-xl`
+- ✅ 图标与文字间距 `gap-2`
+- ✅ hover 时渐变色加深
+
+### 侧边栏导航
+
+**布局**：
+```tsx
+<aside className="w-64 bg-gray-50 border-r border-gray-200">
+  <nav className="px-3">
+    <Link href="/dashboard" className={cn(
+      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+      isActive 
+        ? "text-gray-900 font-medium" 
+        : "text-gray-600 hover:text-gray-900"
+    )}>
+      <Icon className="h-[18px] w-[18px]" />
+      <span>Dashboard</span>
+    </Link>
+  </nav>
+</aside>
+```
+
+**特性**：
+- 浅色背景：`bg-gray-50`
+- 选中状态：`text-gray-900 font-medium`
+- 图标大小：`h-[18px] w-[18px]`
+- 悬停效果：`hover:text-gray-900 hover:bg-gray-100`
+
+### 页面 Header
+
+**毛玻璃效果**：
+```tsx
+<header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+  <div className="flex h-16 items-center justify-between px-8">
+    <div className="flex items-center gap-4">
+      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <h1 className="text-base font-semibold">页面标题</h1>
+    </div>
+  </div>
+</header>
+```
+
+**特性**：
+- 毛玻璃：`bg-white/80 backdrop-blur-md`
+- 渐变图标容器：`rounded-xl` + 渐变背景
+- 高度：`h-16`
+
+### 图标容器（常用模式）
+
+**小图标（统计卡片）**：
+```tsx
+<div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+  <Icon className="h-4 w-4 text-white" />
+</div>
+```
+
+**大图标（快速操作）**：
+```tsx
+<div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+  <Icon className="h-6 w-6 text-white" />
+</div>
+```
+
+### 表格 (Table)
+
+**现代化表格**：
+```tsx
+<div className="space-y-2">
+  <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b">
+    <div>列名</div>
+  </div>
+  <div className="grid grid-cols-4 gap-3 text-sm items-center py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-colors cursor-pointer">
+    <div>数据</div>
+  </div>
+</div>
+```
+
+**特性**：
+- 表头：小写字母 `uppercase` + `text-xs`
+- 行悬停：`hover:bg-gray-50 rounded-lg`
+- 无传统边框，使用 `border-b` 分隔
+- 圆角悬停效果
+
+### 徽章 (Badge)
+
+**状态徽章**：
+```tsx
+<Badge className="bg-red-100 text-red-700 text-xs font-medium">
+  高
+</Badge>
+<Badge className="bg-yellow-100 text-yellow-700 text-xs font-medium">
+  中
+</Badge>
+<Badge className="bg-green-100 text-green-700 text-xs font-medium">
+  低
+</Badge>
+```
+
+**特性**：
+- 圆角：`rounded` 或 `rounded-md`
+- 颜色编码：红（高）、黄（中）、绿（低）
+
+### 输入框 (Input)
+```tsx
+<Input 
+  className="h-10 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+  placeholder="请输入..."
+/>
+```
+
+**特性**：
+- 圆角：`rounded-lg`
+- 边框：`border-gray-200`
+- 聚焦：蓝色边框和 ring
+
+## 字体规范
+
+### 字体大小
+- 页面标题：`text-2xl` 或 `text-3xl font-bold`
+- 卡片标题：`text-sm font-medium`
+- 主要数据：`text-3xl font-bold` 或 `text-4xl font-bold`
+- 正文：`text-sm` 或 `text-base`
+- 辅助文字：`text-xs` 或 `text-sm text-gray-500`
+
+### 字重
+- 标题：`font-bold` (700)
+- 次级标题：`font-semibold` (600)
+- 卡片标题：`font-medium` (500)
+- 正文：`font-normal` (400)
+
+## 交互效果
+
+### 悬停状态
+- **卡片**：`hover:shadow-md transition-shadow`
+- **可点击卡片**：`hover:shadow-lg transition-all`
+- **渐变按钮**：`hover:from-blue-600 hover:to-blue-700`
+- **图标容器**：`group-hover:scale-110 transition-transform`
+- **图片**：`hover:scale-105 transition-transform`
+- **表格行**：`hover:bg-gray-50 rounded-lg`
+- **导航项**：`hover:text-gray-900 hover:bg-gray-100`
+
+### 过渡动画
+- **通用过渡**：`transition-all duration-200`
+- **颜色过渡**：`transition-colors`
+- **阴影过渡**：`transition-shadow`
+- **变形过渡**：`transition-transform`
+- **组合过渡**：`transition-all` 用于复杂动画
+
+### 特殊效果
+- **毛玻璃**：`bg-white/80 backdrop-blur-md`
+- **渐变遮罩**：`bg-gradient-to-br from-gray-50 via-white to-gray-50`
+- **悬浮阴影**：`shadow-sm` → `hover:shadow-lg`
+
+## 图标使用
+
+### 图标库
+- 使用 **lucide-react**（与 Shadcn/ui 配套）
+- 语义化图标选择
+
+### 尺寸规范
+- **小图标**：`h-4 w-4`（16px）- 用于按钮、徽章
+- **常规图标**：`h-5 w-5`（20px）- 用于导航、header
+- **中图标**：`h-6 w-6`（24px）- 用于卡片图标
+- **精确尺寸**：`h-[18px] w-[18px]` - 用于导航图标
+
+### 图标容器（推荐）
+```tsx
+// 小容器（统计卡片）
+<div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+  <Icon className="h-4 w-4 text-white" />
+</div>
+
+// 中容器（Header）
+<div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+  <Icon className="h-5 w-5 text-white" />
+</div>
+
+// 大容器（快速操作）
+<div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+  <Icon className="h-6 w-6 text-white" />
+</div>
+```
+
+### 图标与文字
+- 使用 `flex items-center gap-2`
+- 图标在前：`<Icon /> <span>文字</span>`
+
+## 响应式设计
+
+- 移动端优先：先写移动端样式
+- 断点使用：`sm:` `md:` `lg:` `xl:`
+- 移动端卡片网格：`grid-cols-1`
+- 平板端：`md:grid-cols-2`
+- 桌面端：`lg:grid-cols-3` 或 `lg:grid-cols-4`
+
+## 代码规范
+
+### Tailwind CSS 类名顺序
+1. 布局（display, position）
+2. 尺寸（width, height）
+3. 间距（margin, padding）
+4. 字体（font-size, font-weight）
+5. 颜色（text, background, border）
+6. 其他（shadow, transition 等）
+
+### 复用 Shadcn/ui 组件
+- 优先使用 Shadcn/ui 提供的组件
+- 通过 `className` prop 覆盖样式
+- 使用 `cn()` 工具函数合并类名
+- 避免直接修改组件源代码
+
+### 使用设计系统常量
+项目提供了 `@/lib/design-system` 模块，统一管理常用样式：
+
+```tsx
+import { 
+  gradients, 
+  getGradientButton, 
+  getIconContainer,
+  cardStyles 
+} from "@/lib/design-system"
+
+// 使用渐变按钮
+<Button className={getGradientButton("blue")}>
+  按钮文字
+</Button>
+
+// 使用图标容器
+<div className={getIconContainer("medium", "purple")}>
+  <Icon className="h-5 w-5 text-white" />
+</div>
+
+// 使用卡片样式
+<Card className={cardStyles.stats}>
+  内容
+</Card>
+```
+
+**优势**：
+- ✅ 统一管理样式，便于维护
+- ✅ 避免重复代码
+- ✅ 类型安全（TypeScript）
+- ✅ 易于扩展和修改
+
+### CSS 变量
+- 使用 globals.css 中定义的 CSS 变量
+- 主色使用 `--primary`
+- 修改颜色时优先更新 CSS 变量，而非硬编码颜色
+
+## 完整示例
+
+### 现代化统计卡片
+```tsx
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Megaphone, ArrowUpRight } from "lucide-react"
+
+export function ModernStatsCard() {
+  return (
+    <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+      {/* 背景装饰 */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-600 opacity-5 rounded-full -mr-16 -mt-16" />
+      
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">
+          Total Campaigns
+        </CardTitle>
+        {/* 渐变图标容器 */}
+        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+          <Megaphone className="h-4 w-4 text-white" />
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="text-3xl font-bold text-gray-900">24</div>
+        <div className="flex items-center gap-1 mt-2">
+          <ArrowUpRight className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-600">+12.5%</span>
+          <span className="text-sm text-gray-500 ml-1">vs last month</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### 快速操作卡片
+```tsx
+import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Zap, ArrowUpRight } from "lucide-react"
+
+export function QuickActionCard() {
+  return (
+    <Link href="/ads/creation">
+      <Card className="group border-0 bg-gradient-to-br from-gray-50 to-gray-100 hover:shadow-lg transition-all cursor-pointer h-full">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4">
+            {/* 渐变图标容器 */}
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-semibold text-base text-gray-900">
+                创建广告
+              </h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                快速创建高效的广告活动
+              </p>
+            </div>
+            
+            {/* 渐变按钮 */}
+            <Button className="w-full mt-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0">
+              开始创建
+              <ArrowUpRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+```
+
+## 使用设计系统常量的示例
+
+### 统计卡片（使用常量）
+```tsx
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Megaphone, ArrowUpRight } from "lucide-react"
+import { 
+  getIconContainer, 
+  getBackgroundDecoration,
+  cardStyles 
+} from "@/lib/design-system"
+
+export function StatsCardWithConstants() {
+  return (
+    <Card className={cardStyles.stats}>
+      {/* 使用常量生成背景装饰 */}
+      <div className={getBackgroundDecoration("blue")} />
+      
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">
+          Total Campaigns
+        </CardTitle>
+        {/* 使用常量生成图标容器 */}
+        <div className={getIconContainer("small", "blue")}>
+          <Megaphone className="h-4 w-4 text-white" />
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="text-3xl font-bold text-gray-900">24</div>
+        <div className="flex items-center gap-1 mt-2">
+          <ArrowUpRight className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-600">+12.5%</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+## 设计系统参考
+
+### 可用的常量
+```tsx
+// 从 @/lib/design-system 导入
+import {
+  gradients,           // 渐变色组合
+  hoverGradients,      // hover 渐变色
+  gradientButtons,     // 完整的渐变按钮类名
+  iconContainers,      // 图标容器样式
+  cardStyles,          // 卡片样式
+  spacing,             // 间距规范
+  iconSizes,           // 图标尺寸
+  borderRadius,        // 圆角规范
+  shadows,             // 阴影规范
+  transitions,         // 过渡动画
+  badgeColors,         // 徽章颜色
+  statusColors,        // 状态颜色
+  
+  // 工具函数
+  getGradientButton,
+  getIconContainer,
+  getBackgroundDecoration,
+} from "@/lib/design-system"
+```
+
+### 快速参考
+- **渐变色**：`blue` | `purple` | `green` | `orange` | `red` | `dark`
+- **图标容器**：`small` | `medium` | `large`
+- **卡片样式**：`base` | `clickable` | `stats` | `dark`
+- **间距**：`pageLevel` | `cardContent` | `smallGap` | `mediumGap` | `largeGap`
