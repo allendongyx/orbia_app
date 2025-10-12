@@ -1,8 +1,7 @@
 // next.config.js
-const semi = require("@douyinfe/semi-next").default({
-  /* the extension options */
-});
-module.exports = semi({
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // your custom Next.js configuration
-  
-});
+};
+
+module.exports = nextConfig;

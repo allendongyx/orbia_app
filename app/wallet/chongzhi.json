@@ -1,22 +1,50 @@
 [
   {
-    "id": 1,
-    "date": "2020-02-02 05:13",
-    "amount": "213,424",
-    "payType": "USDT"
+    "id": "RC001",
+    "date": "2025-10-11 18:30",
+    "amount": 50000.00,
+    "payType": "USDT (TRC20)",
+    "status": "completed",
+    "txHash": "0x7a8f...3d2e"
   },
-
   {
-    "id": 2,
-    "date": "2020-02-02 05:13",
-    "amount": "213,424",
-    "payType": "USDT"
+    "id": "RC002",
+    "date": "2025-10-08 14:15",
+    "amount": 30000.00,
+    "payType": "USDC (ERC20)",
+    "status": "completed",
+    "txHash": "0x9b2c...7f1a"
   },
-
   {
-    "id": 3,
-    "date": "2020-02-02 05:13",
-    "amount": "213,424",
-    "payType": "USDT"
+    "id": "RC003",
+    "date": "2025-10-05 10:20",
+    "amount": 25000.00,
+    "payType": "PayPal",
+    "status": "completed",
+    "txHash": "-"
+  },
+  {
+    "id": "RC004",
+    "date": "2025-10-02 16:45",
+    "amount": 40000.00,
+    "payType": "USDT (ERC20)",
+    "status": "completed",
+    "txHash": "0x3e5d...9a4b"
+  },
+  {
+    "id": "RC005",
+    "date": "2025-09-28 09:30",
+    "amount": 20000.00,
+    "payType": "Stripe",
+    "status": "completed",
+    "txHash": "-"
+  },
+  {
+    "id": "RC006",
+    "date": "2025-09-25 13:10",
+    "amount": 35000.00,
+    "payType": "USDC (TRC20)",
+    "status": "completed",
+    "txHash": "0x1f8a...6c3d"
   }
 ]
