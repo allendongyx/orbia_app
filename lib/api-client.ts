@@ -5,9 +5,12 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 
 // 通用响应类型
 export interface BaseResp {
-  code: number;
-  message: string;
-  msg?: string; // 兼容旧字段
+  status_code: number;
+  status_msg: string;
+  // 兼容旧字段
+  code?: number;
+  message?: string;
+  msg?: string;
 }
 
 // API 响应包装类型
@@ -18,13 +21,14 @@ export interface ApiResponse<T> {
 
 // 检查响应是否成功
 export function isSuccessResponse(baseResp: BaseResp): boolean {
-  // 支持 code 为 0 或 200 都表示成功
-  return baseResp.code === 0 || baseResp.code === 200;
+  // 支持新字段 status_code 和旧字段 code，都为 0 或 200 表示成功
+  const statusCode = baseResp.status_code ?? baseResp.code ?? -1;
+  return statusCode === 0 || statusCode === 200;
 }
 
 // 获取错误消息
 export function getErrorMessage(baseResp: BaseResp): string {
-  return baseResp.message || baseResp.msg || 'Request failed';
+  return baseResp.status_msg || baseResp.message || baseResp.msg || 'Request failed';
 }
 
 // 认证错误类（用于标识需要清除登录状态的错误）
@@ -102,7 +106,8 @@ export async function apiRequest<T>(
       
       // 检查业务错误码，某些错误码也表示认证失败
       // 例如：401, 403 或者自定义的认证错误码
-      if (data.base_resp.code === 401 || data.base_resp.code === 403) {
+      const statusCode = data.base_resp.status_code ?? data.base_resp.code ?? 0;
+      if (statusCode === 401 || statusCode === 403) {
         handleAuthError();
         throw new AuthError(errorMsg);
       }
@@ -125,3 +130,32 @@ export async function apiRequest<T>(
     throw new Error('Network error or request failed');
   }
 }
+
+// API 客户端对象
+const apiClient = {
+  get: <T>(endpoint: string, options?: RequestInit): Promise<T> => {
+    return apiRequest<T>(endpoint, { ...options, method: 'GET' });
+  },
+  
+  post: <T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> => {
+    return apiRequest<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+  
+  put: <T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> => {
+    return apiRequest<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+  
+  delete: <T>(endpoint: string, options?: RequestInit): Promise<T> => {
+    return apiRequest<T>(endpoint, { ...options, method: 'DELETE' });
+  },
+};
+
+export default apiClient;

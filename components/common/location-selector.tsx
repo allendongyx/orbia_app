@@ -37,6 +37,9 @@ export default function LocationSelector({
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
 
+  // 确保 value 始终是数组
+  const valueArray = Array.isArray(value) ? value : [];
+
   const countries = countriesData as Country[];
 
   // 过滤国家和地区
@@ -93,7 +96,7 @@ export default function LocationSelector({
   };
 
   const handleSelect = (id: string, isCountry: boolean = false) => {
-    const newValue = [...value];
+    const newValue = [...valueArray];
     const index = newValue.indexOf(id);
 
     if (isCountry) {
@@ -134,23 +137,23 @@ export default function LocationSelector({
   };
 
   const isCountrySelected = (countryId: string) => {
-    return value.includes(countryId);
+    return valueArray.includes(countryId);
   };
 
   const isRegionSelected = (regionId: string) => {
-    return value.includes(regionId);
+    return valueArray.includes(regionId);
   };
 
   const isCountryPartiallySelected = (countryId: string) => {
     const country = countries.find(c => c.id === countryId);
     if (!country) return false;
     
-    const selectedRegions = country.regions.filter(r => value.includes(r.id));
+    const selectedRegions = country.regions.filter(r => valueArray.includes(r.id));
     return selectedRegions.length > 0 && selectedRegions.length < country.regions.length;
   };
 
   const getSelectedLabels = () => {
-    return value.map(id => {
+    return valueArray.map(id => {
       // 检查是否是国家
       const country = countries.find(c => c.id === id);
       if (country) {
@@ -170,7 +173,7 @@ export default function LocationSelector({
   };
 
   const removeSelection = (id: string) => {
-    onChange?.(value.filter(v => v !== id));
+    onChange?.(valueArray.filter(v => v !== id));
   };
 
   return (
@@ -323,10 +326,10 @@ export default function LocationSelector({
           </div>
 
           {/* 底部操作栏 */}
-          {value.length > 0 && (
+          {valueArray.length > 0 && (
             <div className="p-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
               <span className="text-xs text-muted-foreground">
-                已选择 {value.length} 个地域
+                已选择 {valueArray.length} 个地域
               </span>
               <button
                 className="text-xs text-blue-700 hover:text-blue-800 font-medium"

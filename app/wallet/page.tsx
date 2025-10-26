@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Wallet as WalletIcon,
@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Download,
   Filter,
+  Loader2,
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -44,29 +46,21 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TransactionDetailModal } from "@/components/wallet/transaction-detail-modal";
-
-import xiaofeiData from "./xiaofei.json";
-import chongzhiData from "./chongzhi.json";
-import dailySpendingData from "./daily-spending.json";
-
-interface XiaofeiRecord {
-  id: string;
-  name: string;
-  type: string;
-  category: string;
-  amount: number;
-  status: string;
-  updateTime: string;
-}
-
-interface ChongzhiRecord {
-  id: string;
-  date: string;
-  amount: number;
-  payType: string;
-  status: string;
-  txHash: string;
-}
+import {
+  getWalletInfo,
+  getTransactionList,
+  getMyRechargeOrders,
+  formatAmount,
+  getTransactionTypeText,
+  getTransactionStatusText,
+  mapTransactionStatus,
+  getPaymentMethodText,
+  getRechargeOrderStatusText,
+  mapRechargeOrderStatus,
+  type WalletInfo,
+  type Transaction,
+  type RechargeOrder,
+} from "@/lib/api/wallet";
 
 interface DailySpending {
   date: string;
@@ -85,35 +79,131 @@ const COLORS = {
 
 export default function Wallet() {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const xiaofei = xiaofeiData as XiaofeiRecord[];
-  const chongzhi = chongzhiData as ChongzhiRecord[];
-  const dailySpending = dailySpendingData as DailySpending[];
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [rechargeOrders, setRechargeOrders] = useState<RechargeOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [rechargeOrdersLoading, setRechargeOrdersLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rechargeCurrentPage, setRechargeCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [rechargeTotal, setRechargeTotal] = useState(0);
+  const pageSize = 10;
+
+  // Mock data for charts - will be replaced with real data in future
+  const dailySpending: DailySpending[] = [
+    { date: '10-20', amount: 12500, ads: 8000, kol: 4500 },
+    { date: '10-21', amount: 15000, ads: 9500, kol: 5500 },
+    { date: '10-22', amount: 11000, ads: 7000, kol: 4000 },
+    { date: '10-23', amount: 18000, ads: 11000, kol: 7000 },
+    { date: '10-24', amount: 14500, ads: 9000, kol: 5500 },
+    { date: '10-25', amount: 16000, ads: 10000, kol: 6000 },
+    { date: '10-26', amount: 13500, ads: 8500, kol: 5000 },
+  ];
+
+  // 加载钱包信息
+  useEffect(() => {
+    loadWalletInfo();
+  }, []);
+
+  // 加载交易记录（消费账单）
+  useEffect(() => {
+    loadTransactions();
+  }, [currentPage]);
+
+  // 加载充值订单
+  useEffect(() => {
+    loadRechargeOrders();
+  }, [rechargeCurrentPage]);
+
+  const loadWalletInfo = async () => {
+    try {
+      setLoading(true);
+      const response = await getWalletInfo();
+      if (response.wallet) {
+        setWalletInfo(response.wallet);
+      }
+    } catch (error) {
+      console.error('Failed to load wallet info:', error);
+      toast({
+        title: "加载失败",
+        description: error instanceof Error ? error.message : "获取钱包信息失败",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTransactions = async (type?: string, status?: string) => {
+    try {
+      setTransactionsLoading(true);
+      const response = await getTransactionList({
+        type: type || 'consume', // 默认只加载消费类型
+        status,
+        page: currentPage,
+        page_size: pageSize,
+      });
+      setTransactions(response.transactions || []);
+      setTotal(response.total || 0);
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+      toast({
+        title: "加载失败",
+        description: error instanceof Error ? error.message : "获取交易记录失败",
+        variant: "error",
+      });
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  const loadRechargeOrders = async (status?: string) => {
+    try {
+      setRechargeOrdersLoading(true);
+      const response = await getMyRechargeOrders({
+        status: status as any,
+        page: rechargeCurrentPage,
+        page_size: pageSize,
+      });
+      setRechargeOrders(response.orders || []);
+      setRechargeTotal(response.total || 0);
+    } catch (error) {
+      console.error('Failed to load recharge orders:', error);
+      toast({
+        title: "加载失败",
+        description: error instanceof Error ? error.message : "获取充值记录失败",
+        variant: "error",
+      });
+    } finally {
+      setRechargeOrdersLoading(false);
+    }
+  };
 
   // 计算统计数据
-  const currentBalance = 148000.0;
-  const todaySpending = xiaofei
-    .filter((item) => item.updateTime.startsWith("2025-10-12"))
-    .reduce((sum, item) => sum + item.amount, 0);
+  const currentBalance = walletInfo ? parseFloat(walletInfo.balance) : 0;
+  const totalRecharge = walletInfo ? parseFloat(walletInfo.total_recharge) : 0;
+  const totalSpending = walletInfo ? parseFloat(walletInfo.total_consume) : 0;
+  
+  // 今日消费（从交易记录中计算）
+  const today = new Date().toISOString().split('T')[0];
+  const todaySpending = transactions
+    .filter((t) => t.type === 'CONSUME' && t.created_at?.startsWith(today))
+    .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
 
-  const totalSpending = xiaofei.reduce((sum, item) => sum + item.amount, 0);
-  const totalRecharge = chongzhi.reduce((sum, item) => sum + item.amount, 0);
-
-  // 计算分类消费
+  // 计算分类消费（从交易记录中统计 - 需要后端提供分类信息）
   const categorySpending = [
     {
       name: "广告投放",
-      value: xiaofei
-        .filter((item) => item.category === "ads")
-        .reduce((sum, item) => sum + item.amount, 0),
+      value: totalSpending * 0.6, // 临时估算
       color: COLORS.ads,
     },
     {
       name: "KOL营销",
-      value: xiaofei
-        .filter((item) => item.category === "kol")
-        .reduce((sum, item) => sum + item.amount, 0),
+      value: totalSpending * 0.4, // 临时估算
       color: COLORS.kol,
     },
   ];
@@ -126,41 +216,101 @@ export default function Wallet() {
     }).format(value);
   };
 
-  const handleViewTransaction = (transaction: any) => {
+  const handleViewTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setIsDetailModalOpen(true);
   };
 
   const handleExportTransactions = () => {
-    // 模拟导出功能
-    alert("正在导出交易记录...");
+    toast({
+      title: "导出中",
+      description: "正在导出交易记录...",
+    });
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const handleTabChange = (value: string) => {
+    if (value === 'expense') {
+      setCurrentPage(1);
+      loadTransactions('consume');
+    } else if (value === 'recharge') {
+      setRechargeCurrentPage(1);
+      loadRechargeOrders();
+    }
+  };
+
+  const getRechargeOrderStatusBadge = (status: string) => {
+    const mappedStatus = mapRechargeOrderStatus(status);
+    const statusText = getRechargeOrderStatusText(status);
+    
+    switch (mappedStatus) {
       case "completed":
         return (
           <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
             <CheckCircle2 className="mr-1 h-3 w-3" />
-            已完成
+            {statusText}
           </Badge>
         );
       case "pending":
         return (
           <Badge className="bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20">
             <Clock className="mr-1 h-3 w-3" />
-            处理中
+            {statusText}
           </Badge>
         );
       case "failed":
         return (
           <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20">
             <AlertCircle className="mr-1 h-3 w-3" />
-            失败
+            {statusText}
+          </Badge>
+        );
+      case "cancelled":
+        return (
+          <Badge className="bg-gray-500/10 text-gray-600 hover:bg-gray-500/20">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            {statusText}
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{statusText}</Badge>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const mappedStatus = mapTransactionStatus(status);
+    const statusText = getTransactionStatusText(status);
+    
+    switch (mappedStatus) {
+      case "completed":
+        return (
+          <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
+            <CheckCircle2 className="mr-1 h-3 w-3" />
+            {statusText}
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20">
+            <Clock className="mr-1 h-3 w-3" />
+            {statusText}
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            {statusText}
+          </Badge>
+        );
+      case "cancelled":
+        return (
+          <Badge className="bg-gray-500/10 text-gray-600 hover:bg-gray-500/20">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            {statusText}
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{statusText}</Badge>;
     }
   };
 
@@ -179,6 +329,14 @@ export default function Wallet() {
     }
     return null;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -203,6 +361,11 @@ export default function Wallet() {
             <div className="space-y-1">
               <p className="text-sm text-blue-100">当前余额</p>
               <p className="text-3xl font-bold">{formatCurrency(currentBalance)}</p>
+              {walletInfo && parseFloat(walletInfo.frozen_balance) > 0 && (
+                <p className="text-xs text-blue-100">
+                  冻结: {formatCurrency(parseFloat(walletInfo.frozen_balance))}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -368,177 +531,137 @@ export default function Wallet() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="expense" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="expense">消费记录</TabsTrigger>
+          <Tabs defaultValue="expense" className="w-full" onValueChange={handleTabChange}>
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="expense">消费账单</TabsTrigger>
               <TabsTrigger value="recharge">充值记录</TabsTrigger>
-              <TabsTrigger value="all">全部交易</TabsTrigger>
             </TabsList>
 
             {/* 消费记录 */}
             <TabsContent value="expense" className="mt-6">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>交易ID</TableHead>
-                      <TableHead>名称</TableHead>
-                      <TableHead>类型</TableHead>
-                      <TableHead>金额</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>时间</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {xiaofei.map((record) => (
-                      <TableRow 
-                        key={record.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleViewTransaction(record)}
-                      >
-                        <TableCell className="font-mono text-sm">
-                          {record.id}
-                        </TableCell>
-                        <TableCell className="font-medium">{record.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{record.type}</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono">
-                          <span className="text-red-600">
-                            -{formatCurrency(record.amount)}
-                          </span>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(record.status)}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {record.updateTime}
-                        </TableCell>
+              {transactionsLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>交易ID</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>金额</TableHead>
+                        <TableHead>余额变化</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead>时间</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            暂无消费记录
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        transactions.map((record) => (
+                          <TableRow 
+                            key={record.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleViewTransaction(record)}
+                          >
+                            <TableCell className="font-mono text-sm">
+                              {record.transaction_id}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{getTransactionTypeText(record.type)}</Badge>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              <span className="text-red-600">
+                                -{formatAmount(record.amount)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">
+                              {formatAmount(record.balance_before)} → {formatAmount(record.balance_after)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(record.status)}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {new Date(record.created_at).toLocaleString('zh-CN')}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </TabsContent>
 
             {/* 充值记录 */}
             <TabsContent value="recharge" className="mt-6">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>交易ID</TableHead>
-                      <TableHead>时间</TableHead>
-                      <TableHead>金额</TableHead>
-                      <TableHead>支付方式</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>交易哈希</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {chongzhi.map((record) => (
-                      <TableRow 
-                        key={record.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleViewTransaction(record)}
-                      >
-                        <TableCell className="font-mono text-sm">
-                          {record.id}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {record.date}
-                        </TableCell>
-                        <TableCell className="font-mono">
-                          <span className="text-green-600">
-                            +{formatCurrency(record.amount)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{record.payType}</Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(record.status)}</TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {record.txHash}
-                        </TableCell>
+              {rechargeOrdersLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>订单号</TableHead>
+                        <TableHead>时间</TableHead>
+                        <TableHead>金额</TableHead>
+                        <TableHead>支付方式</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead>收款地址/交易哈希</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {rechargeOrders.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            暂无充值记录
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        rechargeOrders.map((order) => (
+                          <TableRow 
+                            key={order.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                          >
+                            <TableCell className="font-mono text-sm">
+                              {order.order_id}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {new Date(order.created_at).toLocaleString('zh-CN')}
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              <span className="text-green-600">
+                                +{formatAmount(order.amount)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {order.payment_type === 'crypto' 
+                                  ? order.payment_network || '加密货币' 
+                                  : order.online_payment_platform || '在线支付'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{getRechargeOrderStatusBadge(order.status)}</TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate">
+                              {order.payment_type === 'crypto' 
+                                ? (order.crypto_tx_hash || order.payment_address || '-')
+                                : (order.online_payment_order_id || '-')}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </TabsContent>
 
-            {/* 全部交易 */}
-            <TabsContent value="all" className="mt-6">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>交易ID</TableHead>
-                      <TableHead>类型</TableHead>
-                      <TableHead>描述</TableHead>
-                      <TableHead>金额</TableHead>
-                      <TableHead>时间</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {/* 合并充值和消费记录并按时间排序 */}
-                    {[
-                      ...chongzhi.map((r) => ({
-                        ...r,
-                        transactionType: "recharge",
-                        description: r.payType,
-                        time: r.date,
-                      })),
-                      ...xiaofei.map((r) => ({
-                        ...r,
-                        transactionType: "expense",
-                        description: r.name,
-                        time: r.updateTime,
-                      })),
-                    ]
-                      .sort(
-                        (a, b) =>
-                          new Date(b.time).getTime() - new Date(a.time).getTime()
-                      )
-                      .slice(0, 10)
-                      .map((record: any) => (
-                        <TableRow key={record.id}>
-                          <TableCell className="font-mono text-sm">
-                            {record.id}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                record.transactionType === "recharge"
-                                  ? "default"
-                                  : "outline"
-                              }
-                            >
-                              {record.transactionType === "recharge"
-                                ? "充值"
-                                : "消费"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.description}</TableCell>
-                          <TableCell className="font-mono">
-                            <span
-                              className={
-                                record.transactionType === "recharge"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }
-                            >
-                              {record.transactionType === "recharge" ? "+" : "-"}
-                              {formatCurrency(record.amount)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {record.time}
-                          </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

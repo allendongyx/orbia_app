@@ -1,23 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Wallet,
   CreditCard,
   Copy,
   CheckCircle2,
   AlertCircle,
-  Bitcoin,
-  DollarSign,
   ExternalLink,
-  QrCode,
+  Loader2,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -25,568 +27,611 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-
-const cryptoOptions = [
-  {
-    value: "usdt-trc20",
-    label: "USDT (TRC20)",
-    network: "Tron",
-    icon: "₮",
-    fee: "0 USDT",
-  },
-  {
-    value: "usdt-erc20",
-    label: "USDT (ERC20)",
-    network: "Ethereum",
-    icon: "₮",
-    fee: "~5-15 USDT",
-  },
-  {
-    value: "usdc-erc20",
-    label: "USDC (ERC20)",
-    network: "Ethereum",
-    icon: "$",
-    fee: "~5-15 USDC",
-  },
-  {
-    value: "usdc-trc20",
-    label: "USDC (TRC20)",
-    network: "Tron",
-    icon: "$",
-    fee: "0 USDC",
-  },
-  {
-    value: "usdc-polygon",
-    label: "USDC (Polygon)",
-    network: "Polygon",
-    icon: "$",
-    fee: "~0.01 USDC",
-  },
-];
-
-const thirdPartyOptions = [
-  {
-    value: "paypal",
-    label: "PayPal",
-    description: "支持信用卡、借记卡和PayPal余额",
-    fee: "3.5%",
-    icon: "🔵",
-  },
-  {
-    value: "stripe",
-    label: "Stripe",
-    description: "支持全球主流信用卡和借记卡",
-    fee: "2.9% + $0.30",
-    icon: "💳",
-  },
-  {
-    value: "coinbase",
-    label: "Coinbase Commerce",
-    description: "支持多种加密货币支付",
-    fee: "1%",
-    icon: "🔷",
-  },
-  {
-    value: "moonpay",
-    label: "MoonPay",
-    description: "信用卡购买加密货币",
-    fee: "3.5-4.5%",
-    icon: "🌙",
-  },
-];
+import { isSuccessResponse } from "@/lib/api-client";
+import { getActivePaymentSettings } from "@/lib/api/payment-setting";
+import type { PaymentSettingInfo } from "@/lib/api/payment-setting";
+import { createCryptoRechargeOrder } from "@/lib/api/wallet";
+import {
+  parseNetworkFromFullName,
+  getNetworkConfig,
+  buildExplorerUrl,
+  type BlockchainNetwork,
+} from "@/types/payment";
 
 export default function Recharge() {
   const router = useRouter();
-  const [selectedCrypto, setSelectedCrypto] = useState("usdt-trc20");
-  const [selectedThirdParty, setSelectedThirdParty] = useState("paypal");
+
+  // 状态
+  const [loading, setLoading] = useState(false);
+  const [loadingWallets, setLoadingWallets] = useState(true);
+  const [availableWallets, setAvailableWallets] = useState<PaymentSettingInfo[]>([]);
+  const [selectedNetwork, setSelectedNetwork] = useState<string>("");
+  const [coinType, setCoinType] = useState<"USDT" | "USDC">("USDT");
+  const [userWalletAddress, setUserWalletAddress] = useState("");
   const [amount, setAmount] = useState("");
-  const [cryptoAmount, setCryptoAmount] = useState("");
   const [copied, setCopied] = useState(false);
-  const [paymentCreated, setPaymentCreated] = useState(false);
+  const [showReceiveAddress, setShowReceiveAddress] = useState(false);
 
-  // 模拟的收款地址
-  const walletAddress = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE";
-  const paymentId = "PAY-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+  // 加载可用的充值钱包
+  useEffect(() => {
+    loadAvailableWallets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(walletAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const loadAvailableWallets = async () => {
+    setLoadingWallets(true);
+    try {
+      const result = await getActivePaymentSettings({});
+      
+      if (isSuccessResponse(result.base_resp) && result.list) {
+        setAvailableWallets(result.list);
+        // 默认选择第一个
+        if (result.list.length > 0) {
+          setSelectedNetwork(result.list[0].network);
+        }
+      } else {
+        toast({
+          variant: "error",
+          title: "加载失败",
+          description: "无法加载充值钱包地址",
+        });
+      }
+    } catch (error) {
+      console.error("Load wallets error:", error);
+      toast({
+        variant: "error",
+        title: "加载失败",
+        description: error instanceof Error ? error.message : "网络错误",
+      });
+    } finally {
+      setLoadingWallets(false);
+    }
   };
 
-  const handleCryptoPayment = () => {
-    setPaymentCreated(true);
-  };
-
-  const handleThirdPartyPayment = () => {
-    // 模拟跳转到第三方支付平台
-    alert(`正在跳转到 ${thirdPartyOptions.find((o) => o.value === selectedThirdParty)?.label} 支付页面...`);
-  };
-
-  const selectedCryptoOption = cryptoOptions.find(
-    (o) => o.value === selectedCrypto
+  // 获取选中的钱包
+  const selectedWallet = availableWallets.find(
+    (w) => w.network === selectedNetwork
   );
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* 页面头部 */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">充值钱包</h1>
-          <p className="text-muted-foreground mt-1">
-            选择合适的支付方式为您的账户充值
-          </p>
+  // 获取网络配置
+  const getNetworkInfo = (networkFullName: string) => {
+    const network = parseNetworkFromFullName(networkFullName);
+    if (!network) return null;
+    return getNetworkConfig(network);
+  };
+
+  // 复制地址
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({
+        title: "已复制",
+        description: "地址已复制到剪贴板",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "复制失败",
+        description: "无法复制到剪贴板",
+      });
+    }
+  };
+
+  // 验证表单
+  const validateForm = () => {
+    if (!selectedNetwork) {
+      toast({
+        variant: "error",
+        title: "验证失败",
+        description: "请选择充值网络",
+      });
+      return false;
+    }
+
+    if (!userWalletAddress.trim()) {
+      toast({
+        variant: "error",
+        title: "验证失败",
+        description: "请输入您的钱包地址",
+      });
+      return false;
+    }
+
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        variant: "error",
+        title: "验证失败",
+        description: "请输入有效的充值金额",
+      });
+      return false;
+    }
+
+    const amountNum = parseFloat(amount);
+    if (amountNum < 10) {
+      toast({
+        variant: "error",
+        title: "验证失败",
+        description: "最小充值金额为 $10",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // 获取收款地址
+  const handleGetReceiveAddress = () => {
+    if (!validateForm()) return;
+    setShowReceiveAddress(true);
+  };
+
+  // 确认充值
+  const handleConfirmRecharge = async () => {
+    if (!validateForm()) return;
+    if (!selectedWallet) return;
+
+    setLoading(true);
+    try {
+      const result = await createCryptoRechargeOrder({
+        amount: amount,
+        payment_setting_id: selectedWallet.id,
+        user_crypto_address: userWalletAddress,
+        remark: `${coinType} 充值`,
+      });
+
+      if (isSuccessResponse(result.base_resp) && result.order) {
+        // 跳转到成功页面，传递订单信息
+        router.push(`/wallet/recharge/success?order_id=${result.order.order_id}`);
+      } else {
+        toast({
+          variant: "error",
+          title: "创建订单失败",
+          description: result.base_resp.status_msg || "创建充值订单失败",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "提交失败",
+        description: error instanceof Error ? error.message : "网络错误",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 打开区块链浏览器
+  const handleOpenExplorer = () => {
+    if (!selectedWallet) return;
+    const network = parseNetworkFromFullName(selectedWallet.network);
+    if (!network) return;
+    const url = buildExplorerUrl(network as BlockchainNetwork, selectedWallet.address);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  if (loadingWallets) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="ml-3 text-gray-600">加载中...</span>
         </div>
       </div>
+    );
+  }
 
-      {/* 当前余额卡片 */}
-      <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-indigo-100 mb-1">当前余额</p>
-              <p className="text-3xl font-bold">$148,000.00</p>
+  if (availableWallets.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-orange-900 mb-1">暂无可用充值方式</h3>
+                <p className="text-sm text-orange-800">
+                  当前没有可用的充值钱包地址，请联系管理员或稍后再试。
+                </p>
+              </div>
             </div>
-            <div className="p-3 bg-white/20 rounded-full">
-              <Wallet className="h-8 w-8" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-      {/* 充值方式选择 */}
-      <Tabs defaultValue="crypto" className="w-full">
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      {/* 头部 */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">钱包充值</h1>
+        <p className="text-sm text-gray-600 mt-1">选择充值方式，安全、快速到账</p>
+      </div>
+
+      {/* Tab 切换 */}
+      <Tabs defaultValue="crypto" className="space-y-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="crypto" className="gap-2">
-            <Bitcoin className="h-4 w-4" />
-            加密货币支付
+            <Wallet className="h-4 w-4" />
+            加密货币
           </TabsTrigger>
-          <TabsTrigger value="thirdparty" className="gap-2">
+          <TabsTrigger value="online" className="gap-2">
             <CreditCard className="h-4 w-4" />
             在线支付
           </TabsTrigger>
         </TabsList>
 
-        {/* 加密货币支付 */}
-        <TabsContent value="crypto" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* 左侧：输入表单 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>加密货币转账支付</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="crypto-currency">选择币种和网络</Label>
-                  <Select
-                    value={selectedCrypto}
-                    onValueChange={setSelectedCrypto}
-                  >
-                    <SelectTrigger id="crypto-currency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cryptoOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>
-                              {option.icon} {option.label}
-                            </span>
-                            <Badge variant="outline" className="ml-2">
-                              {option.network}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedCryptoOption && (
-                    <p className="text-xs text-muted-foreground">
-                      网络手续费: {selectedCryptoOption.fee}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="crypto-amount">充值金额 (USD)</Label>
-                  <Input
-                    id="crypto-amount"
-                    type="number"
-                    placeholder="1000.00"
-                    value={cryptoAmount}
-                    onChange={(e) => setCryptoAmount(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    最小充值金额: $100.00
+        {/* 加密货币充值 */}
+        <TabsContent value="crypto" className="space-y-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 左侧：充值表单 */}
+            <div className="space-y-5">
+              {/* 币种选择 */}
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-base font-semibold mb-1">选择币种</h2>
+                  <p className="text-xs text-gray-600">
+                    选择您要充值的稳定币类型
                   </p>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setCryptoAmount("1000")}
+                <RadioGroup
+                  value={coinType}
+                  onValueChange={(value) => setCoinType(value as "USDT" | "USDC")}
+                  className="grid grid-cols-2 gap-0 border border-gray-200 overflow-hidden rounded-lg"
+                >
+                  <Label
+                    htmlFor="usdt"
+                    className={`h-full cursor-pointer p-3 transition-all border-r border-gray-200 ${
+                      coinType === "USDT"
+                        ? "bg-gray-900 text-white"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
                   >
-                    $1,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setCryptoAmount("5000")}
+                    <RadioGroupItem value="USDT" id="usdt" className="sr-only" />
+                    <div className="text-center">
+                      <div className="text-xl mb-1">₮</div>
+                      <div className="font-semibold text-sm">USDT</div>
+                      <div className="text-xs opacity-70 mt-0.5">Tether USD</div>
+                    </div>
+                  </Label>
+
+                  <Label
+                    htmlFor="usdc"
+                    className={`h-full cursor-pointer p-3 transition-all ${
+                      coinType === "USDC"
+                        ? "bg-gray-900 text-white"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
                   >
-                    $5,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setCryptoAmount("10000")}
-                  >
-                    $10,000
-                  </Button>
+                    <RadioGroupItem value="USDC" id="usdc" className="sr-only" />
+                    <div className="text-center">
+                      <div className="text-xl mb-1">$</div>
+                      <div className="font-semibold text-sm">USDC</div>
+                      <div className="text-xs opacity-70 mt-0.5">USD Coin</div>
+                    </div>
+                  </Label>
+                </RadioGroup>
+              </div>
+
+              {/* 网络选择 */}
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-base font-semibold mb-1">选择网络</h2>
+                  <p className="text-xs text-gray-600">
+                    不同网络手续费和到账时间不同
+                  </p>
                 </div>
 
-                <Separator />
+                <div className="space-y-2">
+                  <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="选择区块链网络" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableWallets.map((wallet) => {
+                        const networkInfo = getNetworkInfo(wallet.network);
+                        return (
+                          <SelectItem key={wallet.id} value={wallet.network}>
+                            <div className="flex items-center gap-2">
+                              {networkInfo && (
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: networkInfo.color }}
+                                />
+                              )}
+                              <span className="font-medium">
+                                {networkInfo?.name || wallet.network}
+                              </span>
+                              {wallet.label && (
+                                <span className="text-xs text-gray-500">
+                                  ({wallet.label})
+                                </span>
+                              )}
+                              {networkInfo?.estimatedTime && (
+                                <span className="text-xs text-gray-500">
+                                  - {networkInfo.estimatedTime}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleCryptoPayment}
-                  disabled={!cryptoAmount || parseFloat(cryptoAmount) < 100}
-                >
-                  生成收款地址
-                </Button>
-              </CardContent>
-            </Card>
+              {/* 充值金额 */}
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-base font-semibold mb-1">充值金额</h2>
+                  <p className="text-xs text-gray-600">最小充值金额为 $10</p>
+                </div>
 
-            {/* 右侧：支付信息 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>支付信息</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!paymentCreated ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <QrCode className="h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      请先选择币种并输入充值金额
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label>支付ID</Label>
-                      <div className="flex gap-2">
-                        <Input value={paymentId} readOnly className="font-mono" />
-                        <Button variant="outline" size="icon" onClick={handleCopy}>
-                          {copied ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount" className="text-sm font-medium">
+                    金额 (USD)
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="10"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="请输入充值金额"
+                    className="h-11 text-lg"
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label>收款地址</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={walletAddress}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button variant="outline" size="icon" onClick={handleCopy}>
-                          {copied ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+                {/* 快捷金额 */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[100, 500, 1000, 5000].map((preset) => (
+                    <Button
+                      key={preset}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAmount(preset.toString())}
+                      className="h-9"
+                    >
+                      ${preset}
+                    </Button>
+                  ))}
+                </div>
+              </div>
 
-                    <div className="space-y-2">
-                      <Label>网络</Label>
-                      <Input
-                        value={selectedCryptoOption?.network}
-                        readOnly
-                        className="bg-muted"
-                      />
-                    </div>
+              {/* 您的钱包地址 */}
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-base font-semibold mb-1">您的钱包地址</h2>
+                  <p className="text-xs text-gray-600">
+                    输入您将用于转账的钱包地址，方便系统自动验证
+                  </p>
+                </div>
 
-                    <div className="space-y-2">
-                      <Label>充值金额</Label>
-                      <Input
-                        value={`$${cryptoAmount}`}
-                        readOnly
-                        className="bg-muted font-semibold text-lg"
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-wallet" className="text-sm font-medium">
+                    钱包地址
+                  </Label>
+                  <Input
+                    id="user-wallet"
+                    value={userWalletAddress}
+                    onChange={(e) => setUserWalletAddress(e.target.value)}
+                    placeholder="请输入您的钱包地址"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500">
+                    请确保地址与选择的网络匹配
+                  </p>
+                </div>
+              </div>
 
-                    <Separator />
+              {/* 操作按钮 */}
+              <Button
+                onClick={handleGetReceiveAddress}
+                disabled={loading}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+              >
+                获取收款地址
+              </Button>
+            </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-blue-900 dark:text-blue-100">
-                            重要提示
-                          </p>
-                          <ul className="text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
-                            <li>请务必使用正确的网络进行转账</li>
-                            <li>转账完成后，请保存交易哈希</li>
-                            <li>资金将在1-3个区块确认后到账</li>
-                            <li>如有问题，请联系客服并提供支付ID</li>
+            {/* 右侧：收款地址和二维码 */}
+            <div className="space-y-5">
+              {showReceiveAddress && selectedWallet ? (
+                <>
+                  {/* 收款信息 */}
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 space-y-1">
+                          <h3 className="font-medium text-blue-900 text-sm">重要提示</h3>
+                          <ul className="text-xs text-blue-800 space-y-0.5">
+                            <li>• 请确认网络选择正确，错误网络可能导致资金丢失</li>
+                            <li>• 只发送 {coinType} 到此地址</li>
+                            <li>• 最小充值金额为 $10</li>
+                            <li>• 充值到账需要区块确认时间</li>
                           </ul>
                         </div>
                       </div>
-                    </div>
+                    </CardContent>
+                  </Card>
 
-                    <div className="pt-4 space-y-2">
-                      <div className="flex items-center justify-center gap-2 text-sm text-green-600">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span>收款地址已生成，等待支付</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* 第三方支付 */}
-        <TabsContent value="thirdparty" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* 左侧：支付方式选择 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>选择支付方式</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {thirdPartyOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedThirdParty === option.value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setSelectedThirdParty(option.value)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-3">
-                        <div className="text-2xl">{option.icon}</div>
+                  {/* 二维码 */}
+                  <Card>
+                    <CardContent className="p-5">
+                      <div className="text-center space-y-4">
+                        <div className="flex justify-center">
+                          <div className="p-4 bg-white border-4 border-gray-200 rounded-lg">
+                            <QRCodeSVG
+                              value={selectedWallet.address}
+                              size={180}
+                              level="H"
+                              includeMargin={false}
+                            />
+                          </div>
+                        </div>
                         <div>
-                          <p className="font-semibold">{option.label}</p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {option.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            手续费: {option.fee}
-                          </p>
+                          <div className="text-sm text-gray-600 mb-2">
+                            扫描二维码或复制地址转账
+                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {getNetworkInfo(selectedWallet.network)?.name} 网络
+                          </Badge>
                         </div>
                       </div>
-                      {selectedThirdParty === option.value && (
-                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
 
-            {/* 右侧：金额输入 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>充值金额</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">输入金额 (USD)</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="1000.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="pl-10 text-lg"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    最小充值金额: $50.00
-                  </p>
-                </div>
+                  {/* 收款地址 */}
+                  <Card>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">收款地址</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleOpenExplorer}
+                          className="h-7 text-xs"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          区块链浏览器
+                        </Button>
+                      </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("500")}
-                  >
-                    $500
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("1000")}
-                  >
-                    $1,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("2000")}
-                  >
-                    $2,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("5000")}
-                  >
-                    $5,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("10000")}
-                  >
-                    $10,000
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAmount("20000")}
-                  >
-                    $20,000
-                  </Button>
-                </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <code className="text-xs font-mono break-all text-gray-900">
+                          {selectedWallet.address}
+                        </code>
+                      </div>
 
-                <Separator />
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCopy(selectedWallet.address)}
+                        className="w-full"
+                      >
+                        {copied ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                            已复制
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            复制地址
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-                {amount && parseFloat(amount) >= 50 && (
-                  <div className="space-y-3 p-4 bg-muted rounded-lg">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">充值金额</span>
-                      <span className="font-medium">${parseFloat(amount).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">手续费</span>
-                      <span className="font-medium">
-                        {thirdPartyOptions.find(
-                          (o) => o.value === selectedThirdParty
-                        )?.fee}
-                      </span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between">
-                      <span className="font-semibold">预计到账</span>
-                      <span className="font-bold text-lg">
-                        ${parseFloat(amount).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                  {/* 充值信息汇总 */}
+                  <Card>
+                    <CardContent className="p-4 space-y-3">
+                      <h3 className="font-medium text-sm mb-2">充值信息</h3>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">币种:</span>
+                          <span className="font-medium">{coinType}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">网络:</span>
+                          <span className="font-medium">
+                            {getNetworkInfo(selectedWallet.network)?.name}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">充值金额:</span>
+                          <span className="font-medium text-lg text-blue-600">
+                            ${amount}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-start">
+                          <span className="text-gray-600">您的地址:</span>
+                          <span className="font-mono text-xs text-right max-w-[180px] break-all">
+                            {userWalletAddress || "-"}
+                          </span>
+                        </div>
+                      </div>
 
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleThirdPartyPayment}
-                  disabled={!amount || parseFloat(amount) < 50}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  前往支付
-                </Button>
-
-                <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-amber-900 dark:text-amber-100">
-                        注意事项
-                      </p>
-                      <ul className="text-amber-700 dark:text-amber-300 space-y-1 ml-4 list-disc">
-                        <li>支付将跳转到第三方支付平台</li>
-                        <li>资金通常在5-15分钟内到账</li>
-                        <li>请确保支付信息准确无误</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="pt-3 border-t">
+                        <Button
+                          onClick={handleConfirmRecharge}
+                          disabled={loading}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              创建订单中...
+                            </>
+                          ) : (
+                            <>
+                              <Wallet className="h-4 w-4 mr-2" />
+                              确认充值
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          点击后将创建充值订单，然后您可以进行转账操作
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card className="border-gray-200">
+                  <CardContent className="p-12 text-center">
+                    <Wallet className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500 mb-2">请先填写充值信息</p>
+                    <p className="text-xs text-gray-400">
+                      完成左侧表单后，点击&quot;获取收款地址&quot;查看充值信息
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </TabsContent>
+
+        {/* 在线支付 */}
+        <TabsContent value="online" className="space-y-0">
+          <Card className="border-gray-200">
+            <CardContent className="p-12 text-center">
+              <CreditCard className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                在线支付功能即将开放
+              </h3>
+              <p className="text-gray-500 mb-4">
+                我们正在接入 PayPal、Stripe 等第三方支付平台
+              </p>
+              <div className="max-w-md mx-auto space-y-3">
+                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="text-2xl">🔵</div>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-sm">PayPal</div>
+                    <div className="text-xs text-gray-600">支持信用卡、借记卡</div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">即将开放</Badge>
+                </div>
+                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="text-2xl">💳</div>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-sm">Stripe</div>
+                    <div className="text-xs text-gray-600">全球主流信用卡</div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">即将开放</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
-
-      {/* 支付说明 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>充值说明</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Bitcoin className="h-5 w-5 text-orange-500" />
-                加密货币支付
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-7">
-                <li>• 支持USDT、USDC等主流稳定币</li>
-                <li>• 多链支持：Ethereum、Tron、Polygon等</li>
-                <li>• 转账完成后1-3个区块确认到账</li>
-                <li>• 最低充值金额$100</li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-blue-500" />
-                在线支付
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-7">
-                <li>• 支持PayPal、信用卡、借记卡</li>
-                <li>• 即时到账，无需等待确认</li>
-                <li>• 安全可靠，由第三方平台保障</li>
-                <li>• 最低充值金额$50</li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h4 className="font-semibold">常见问题</h4>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="font-medium mb-1">Q: 充值多久能到账？</p>
-                <p className="text-muted-foreground">
-                  加密货币支付通常需要1-3个区块确认，约5-30分钟；在线支付即时到账。
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Q: 转账失败了怎么办？</p>
-                <p className="text-muted-foreground">
-                  请保存好交易哈希或支付凭证，联系客服为您处理。
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Q: 是否有充值优惠？</p>
-                <p className="text-muted-foreground">
-                  首次充值可享受5%奖励，充值满$10,000可享受额外优惠。
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

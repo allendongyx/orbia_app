@@ -82,3 +82,31 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+
+/* TikTok 嵌入视频样式控制 */
+.tiktok-embed-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.tiktok-embed-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* 覆盖 TikTok 默认样式 */
+.tiktok-embed-container blockquote.tiktok-embed {
+  max-width: 100% !important;
+  min-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+.tiktok-embed-container iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+}

@@ -4,6 +4,7 @@ import { ImgsSelector, EmojiItem } from "@/components/common/imgs-selector";
 import { updateProfile } from "@/lib/api/user";
 import { isSuccessResponse } from "@/lib/api-client";
 import avatarEmojis from "@/data/avatar-emojis.json";
+import { toast } from "@/hooks/use-toast";
 
 interface AvatarSelectorProps {
   open: boolean;
@@ -27,13 +28,25 @@ export function AvatarSelector({
 
       if (isSuccessResponse(response.base_resp)) {
         onAvatarChange(avatarUrl);
+        toast({
+          title: "更新成功",
+          description: "头像已更新",
+        });
       } else {
         console.error("Failed to update avatar:", response.base_resp);
-        alert("Failed to update avatar. Please try again.");
+        toast({
+          variant: "error",
+          title: "更新失败",
+          description: "请重试",
+        });
       }
     } catch (error) {
       console.error("Failed to update avatar:", error);
-      alert("Failed to update avatar. Please try again.");
+      toast({
+        variant: "error",
+        title: "更新失败",
+        description: "请重试",
+      });
     }
   };
 

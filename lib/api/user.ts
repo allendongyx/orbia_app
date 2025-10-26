@@ -1,5 +1,6 @@
 import { apiRequest, type BaseResp } from '../api-client';
 import { Team } from '@/types/team';
+import { KolInfo } from './kol';
 
 // 用户信息
 export interface UserInfo {
@@ -8,6 +9,10 @@ export interface UserInfo {
   email?: string;
   nickname?: string;
   avatar_url?: string;
+  role?: 'normal' | 'admin'; // 用户角色：normal-普通用户, admin-管理员
+  status?: 'normal' | 'disabled' | 'deleted'; // 用户状态
+  kol_id?: number; // 关联的 KOL ID，如果用户已申请成为 KOL
+  kol_info?: KolInfo; // KOL 详细信息（如果已申请）
   created_at: string;
   updated_at: string;
   current_team?: Team;

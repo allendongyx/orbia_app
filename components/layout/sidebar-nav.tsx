@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { mainNavItems, bottomNavItems } from "@/lib/navigation-config";
+import { mainNavItems, bottomNavItems, adminNavItems } from "@/lib/navigation-config";
 import { useAuth } from "@/contexts/auth-context";
 import { LoginModal } from "@/components/auth/login-modal";
 import { AvatarSelector } from "@/components/auth/avatar-selector";
@@ -29,6 +29,22 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(["KOLs"]); // 默认展开 KOLs
+  
+  // 判断用户是否为管理员
+  const isAdmin = user?.role === 'admin';
+
+  // 监听全局登录模态框触发事件
+  useEffect(() => {
+    const handleOpenLoginModal = () => {
+      setShowLoginModal(true);
+    };
+
+    window.addEventListener('openLoginModal', handleOpenLoginModal);
+
+    return () => {
+      window.removeEventListener('openLoginModal', handleOpenLoginModal);
+    };
+  }, []);
 
   const handleAvatarChange = async (avatarUrl: string) => {
     // Refresh user data after avatar change
@@ -159,6 +175,85 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
             );
           })}
         </div>
+        
+        {/* 管理员菜单 - 仅管理员可见 */}
+        {isAdmin && (
+          <>
+            <div className="mt-4 mb-2 px-3">
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                管理功能
+              </div>
+            </div>
+            <div className="flex flex-col space-y-0.5">
+              {adminNavItems.map((item) => {
+                const Icon = item.icon;
+                const isExpanded = expandedMenus.includes(item.title);
+                
+                const hasActiveChild = item.children?.some(child => 
+                  pathname === child.href || pathname?.startsWith(child.href + "/")
+                );
+
+                // 如果有子菜单
+                if (item.children) {
+                  return (
+                    <div key={item.title}>
+                      <button
+                        onClick={() => toggleMenu(item.title)}
+                        className={cn(
+                          "flex items-center justify-between w-full gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                          hasActiveChild
+                            ? "text-gray-900 font-medium"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-normal"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-[18px] w-[18px] shrink-0" />
+                          <span>{item.title}</span>
+                        </div>
+                        <ChevronDown 
+                          className={cn(
+                            "h-4 w-4 transition-transform",
+                            isExpanded && "rotate-180"
+                          )} 
+                        />
+                      </button>
+                      
+                      {/* 子菜单 */}
+                      {isExpanded && (
+                        <div className="ml-6 mt-1 space-y-0.5">
+                          {item.children.map((child) => {
+                            if (!child.href) return null;
+                            
+                            const ChildIcon = child.icon;
+                            const isChildActive = pathname === child.href || pathname?.startsWith(child.href + "/");
+                            
+                            return (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                className={cn(
+                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                                  isChildActive
+                                    ? "bg-gray-900 text-white font-medium"
+                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-normal"
+                                )}
+                              >
+                                <ChildIcon className="h-[16px] w-[16px] shrink-0" />
+                                <span>{child.title}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Bottom Section */}

@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "@/hooks/use-toast";
+import { uploadToR2, validateImageFile } from "@/lib/r2-upload";
 
 export interface EmojiItem {
   name: string;
@@ -57,7 +59,11 @@ export function ImgsSelector({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to select emoji:", error);
-      alert("Failed to select emoji. Please try again.");
+      toast({
+        variant: "error",
+        title: "选择失败",
+        description: "请重试",
+      });
     } finally {
       setIsSaving(false);
       setSelectedEmojiUrl("");
@@ -68,39 +74,39 @@ export function ImgsSelector({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert("File size must be less than 2MB");
-      return;
-    }
-
-    // Check file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
+    // 验证图片文件
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast({
+        variant: "error",
+        title: "文件验证失败",
+        description: validation.error,
+      });
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Convert to data URL
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const dataUrl = e.target?.result as string;
-        
-        onImageChange(dataUrl);
-        onOpenChange(false);
-        
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        alert("Failed to read file");
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      // 使用 R2 预签名方式上传
+      const publicUrl = await uploadToR2(file);
+      
+      // 上传成功，调用回调
+      onImageChange(publicUrl);
+      onOpenChange(false);
+
+      toast({
+        title: "上传成功",
+        description: "图片已上传到云端",
+      });
     } catch (error) {
       console.error("Failed to upload image:", error);
-      alert("Failed to upload image. Please try again.");
+      toast({
+        variant: "error",
+        title: "上传失败",
+        description: error instanceof Error ? error.message : "请重试",
+      });
+    } finally {
       setIsUploading(false);
     }
   };
@@ -183,7 +189,7 @@ export function ImgsSelector({
                     Upload a new image
                   </p>
                   <p className="text-xs text-gray-500 mb-4">
-                    Max size: 2MB. Formats: JPG, PNG, GIF
+                    Max size: 10MB. Formats: JPG, PNG, GIF, WebP
                   </p>
                   <input
                     type="file"
