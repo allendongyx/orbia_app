@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getIconContainer, cardStyles } from "@/lib/design-system";
 import { getKolList, getKolInfo, KolInfo as ApiKolInfo } from "@/lib/api/kol";
-import { isSuccessResponse } from "@/lib/api-client";
+import { isSuccessResponse, BaseResp } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
 import data from "../data.json";
 
@@ -76,15 +76,15 @@ export default function Kols() {
       console.log('响应键:', Object.keys(result));
       
       // 检查是否有嵌套的 data 字段
-      const actualData = (result as any).data || result;
+      const actualData = ((result as unknown as Record<string, unknown>).data || result) as unknown as Record<string, unknown>;
       console.log('实际数据:', actualData);
       console.log('base_resp:', actualData.base_resp);
       console.log('kol_list:', actualData.kol_list);
       console.log('kol_list 类型:', Array.isArray(actualData.kol_list));
-      console.log('kol_list 长度:', actualData.kol_list?.length);
+      console.log('kol_list 长度:', (actualData.kol_list as unknown[])?.length);
       
-      if (actualData.base_resp && isSuccessResponse(actualData.base_resp)) {
-        const list = actualData.kol_list || [];
+      if (actualData.base_resp && isSuccessResponse(actualData.base_resp as BaseResp)) {
+        const list = (actualData.kol_list as ApiKolInfo[]) || [];
         console.log('✅ 成功！设置 KOL 列表，包含', list.length, '项');
         console.log('第一个 KOL:', list[0]);
         setKolList(list);

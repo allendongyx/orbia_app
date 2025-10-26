@@ -80,10 +80,26 @@ export async function apiRequest<T>(
 
     const data = await response.json();
 
+    // 兼容新的返回格式：{ code, message, data }
+    // 将其转换为旧格式：{ ...data, base_resp: { status_code, status_msg } }
+    let normalizedData = data;
+    if (data.code !== undefined && data.data !== undefined) {
+      // 新格式，需要转换
+      normalizedData = {
+        ...(typeof data.data === 'object' ? data.data : {}),
+        base_resp: {
+          status_code: data.code,
+          status_msg: data.message || data.msg || '',
+          code: data.code,
+          message: data.message || data.msg || '',
+        },
+      };
+    }
+
     // 检查 HTTP 状态码 - 401/403 表示认证失败
     if (response.status === 401 || response.status === 403) {
-      const errorMsg = data.base_resp 
-        ? getErrorMessage(data.base_resp) 
+      const errorMsg = normalizedData.base_resp 
+        ? getErrorMessage(normalizedData.base_resp) 
         : 'Authentication failed';
       
       // 触发认证错误处理（清除登录状态）
@@ -94,19 +110,19 @@ export async function apiRequest<T>(
 
     // 如果 HTTP 状态码不是 2xx，但有响应体，检查 base_resp
     if (!response.ok) {
-      if (data.base_resp) {
-        throw new Error(getErrorMessage(data.base_resp));
+      if (normalizedData.base_resp) {
+        throw new Error(getErrorMessage(normalizedData.base_resp));
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     // 检查业务逻辑层的成功状态
-    if (data.base_resp && !isSuccessResponse(data.base_resp)) {
-      const errorMsg = getErrorMessage(data.base_resp);
+    if (normalizedData.base_resp && !isSuccessResponse(normalizedData.base_resp)) {
+      const errorMsg = getErrorMessage(normalizedData.base_resp);
       
       // 检查业务错误码，某些错误码也表示认证失败
       // 例如：401, 403 或者自定义的认证错误码
-      const statusCode = data.base_resp.status_code ?? data.base_resp.code ?? 0;
+      const statusCode = normalizedData.base_resp.status_code ?? normalizedData.base_resp.code ?? 0;
       if (statusCode === 401 || statusCode === 403) {
         handleAuthError();
         throw new AuthError(errorMsg);
@@ -115,7 +131,7 @@ export async function apiRequest<T>(
       throw new Error(errorMsg);
     }
 
-    return data;
+    return normalizedData;
   } catch (error) {
     // 如果是 AuthError，直接抛出
     if (error instanceof AuthError) {

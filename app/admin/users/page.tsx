@@ -231,25 +231,25 @@ export default function AdminUsersPage() {
       title: "总用户数",
       value: total.toString(),
       icon: UsersIcon,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "正常用户",
       value: users.filter((u) => u.status === "normal").length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "已禁用",
       value: users.filter((u) => u.status === "disabled").length.toString(),
       icon: Ban,
-      gradient: "red",
+      gradient: "red" as const,
     },
     {
       title: "管理员",
       value: users.filter((u) => u.role === "admin").length.toString(),
       icon: Shield,
-      gradient: "purple",
+      gradient: "purple" as const,
     },
   ];
 
@@ -271,7 +271,7 @@ export default function AdminUsersPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as 'blue' | 'green' | 'red' | 'purple' | 'orange')}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

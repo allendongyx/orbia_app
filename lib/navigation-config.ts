@@ -16,6 +16,10 @@ import {
   CreditCard,
   DollarSign,
   Tv,
+  BarChart3,
+  Video,
+  TrendingUp,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +29,7 @@ export interface NavigationItem {
   icon: LucideIcon;
   external?: boolean;
   children?: NavigationItem[];
+  requireKol?: boolean; // 标记为仅KOL可见
 }
 
 export const mainNavItems: NavigationItem[] = [
@@ -48,9 +53,15 @@ export const mainNavItems: NavigationItem[] = [
         icon: ShoppingBag,
       },
       {
-        title: "My Orders",
-        href: "/kol/orders",
+        title: "我发起的订单",
+        href: "/kol/orders/placed",
         icon: Receipt,
+      },
+      {
+        title: "我收到的订单",
+        href: "/kol/orders/received",
+        icon: Receipt,
+        requireKol: true, // 标记为仅KOL可见
       },
     ],
   },
@@ -64,7 +75,7 @@ export const mainNavItems: NavigationItem[] = [
 // 管理员导航菜单
 export const adminNavItems: NavigationItem[] = [
   {
-    title: "管理用户",
+    title: "管理用户和团队",
     icon: Shield,
     children: [
       {
@@ -72,23 +83,11 @@ export const adminNavItems: NavigationItem[] = [
         href: "/admin/users",
         icon: UserCog,
       },
-    ],
-  },
-  {
-    title: "KOL 管理",
-    icon: UsersRound,
-    children: [
       {
         title: "KOL 列表",
         href: "/admin/kols",
         icon: UsersRound,
       },
-    ],
-  },
-  {
-    title: "团队管理",
-    icon: Building2,
-    children: [
       {
         title: "团队列表",
         href: "/admin/teams",
@@ -130,6 +129,27 @@ export const adminNavItems: NavigationItem[] = [
         title: "收款设置",
         href: "/admin/payment-settings",
         icon: CreditCard,
+      },
+    ],
+  },
+  {
+    title: "运营管理",
+    icon: BarChart3,
+    children: [
+      {
+        title: "优秀广告案例",
+        href: "/admin/dashboard/excellent-cases",
+        icon: Video,
+      },
+      {
+        title: "内容趋势",
+        href: "/admin/dashboard/content-trends",
+        icon: TrendingUp,
+      },
+      {
+        title: "平台数据",
+        href: "/admin/dashboard/platform-stats",
+        icon: Database,
       },
     ],
   },

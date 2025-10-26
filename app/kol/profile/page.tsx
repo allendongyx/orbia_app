@@ -50,8 +50,8 @@ import {
 import { isSuccessResponse } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "@/hooks/use-toast";
-import LocationSelector from "@/components/common/location-selector";
-import LanguageSelector from "@/components/common/language-selector";
+import LocationSelectorDict from "@/components/common/location-selector-dict";
+import LanguageSelectorDict from "@/components/common/language-selector-dict";
 import { AvatarSelector } from "@/components/auth/avatar-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, Clock, XCircle, AlertCircle, Play } from "lucide-react";
@@ -176,9 +176,11 @@ export default function KOLProfilePage() {
     setSaving(true);
     try {
       // 转换数据：country 从数组转为字符串
+      // language_names 使用 language_codes（字典的 code）
       const submitData: UpdateKolInfoReq = {
         ...formData,
         country: formData.country[0] || "",
+        language_names: formData.language_codes,
       };
       
       const result = await updateKolInfo(submitData);
@@ -324,7 +326,7 @@ export default function KOLProfilePage() {
         <Alert className="border-yellow-200 bg-yellow-50">
           <Clock className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            Your KOL application is currently under review. We'll notify you once it's been processed.
+            Your KOL application is currently under review. We&apos;ll notify you once it&apos;s been processed.
           </AlertDescription>
         </Alert>
       )}
@@ -397,7 +399,7 @@ export default function KOLProfilePage() {
               <div>
                 <Label htmlFor="country">Country *</Label>
                 <div className="mt-1.5">
-                  <LocationSelector
+                  <LocationSelectorDict
                     value={formData.country}
                     onChange={(value) =>
                       setFormData(prev => ({ ...prev, country: value.slice(0, 1) }))
@@ -438,37 +440,22 @@ export default function KOLProfilePage() {
 
               <div>
                 <Label htmlFor="languages">Languages *</Label>
-                <LanguageSelector
-                  value={formData.language_codes}
-                  onChange={(codes) => {
-                    // 从语言代码映射到完整的语言信息
-                    const languageMap: Record<string, string> = {
-                      "en": "English",
-                      "es": "Spanish",
-                      "fr": "French",
-                      "de": "German",
-                      "zh": "中文",
-                      "ja": "Japanese",
-                      "ko": "Korean",
-                      "pt": "Portuguese",
-                      "ru": "Russian",
-                      "ar": "Arabic",
-                      "hi": "Hindi",
-                      "it": "Italian",
-                      "th": "Thai",
-                      "vi": "Vietnamese",
-                      "id": "Indonesian",
-                      "tr": "Turkish",
-                    };
-                    
-                    setFormData(prev => ({
-                      ...prev,
-                      language_codes: codes,
-                      language_names: codes.map(code => languageMap[code] || code),
-                    }));
-                  }}
-                  placeholder="Select languages"
-                />
+                <div className="mt-1.5">
+                  <LanguageSelectorDict
+                    value={formData.language_codes}
+                    onChange={(codes) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        language_codes: codes,
+                        language_names: codes,
+                      }));
+                    }}
+                    placeholder="Select languages"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select the languages you can create content in
+                  </p>
+                </div>
               </div>
 
               <div>

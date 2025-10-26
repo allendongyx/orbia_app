@@ -280,19 +280,19 @@ export default function AdminDictionaryPage() {
       title: "总字典数",
       value: total.toString(),
       icon: BookOpen,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "启用中",
       value: dictionaries.filter((d) => d.status === 1).length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "已禁用",
       value: dictionaries.filter((d) => d.status === 0).length.toString(),
       icon: XCircle,
-      gradient: "gray",
+      gradient: "dark" as const,
     },
   ];
 
@@ -320,7 +320,7 @@ export default function AdminDictionaryPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as "blue" | "green" | "yellow" | "red" | "purple" | "orange" | "gray")}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

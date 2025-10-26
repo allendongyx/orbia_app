@@ -10,13 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { getKolInfo, getKolPlans, KolInfo, KolPlan } from "@/lib/api/kol";
+import { createKolOrder } from "@/lib/api/kol-order";
 import { isSuccessResponse } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreateOrderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const kolId = searchParams.get("kol_id");
   const planId = searchParams.get("plan_id");
+  const { toast } = useToast();
 
   const [kolInfo, setKolInfo] = useState<KolInfo | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<KolPlan | null>(null);
@@ -30,7 +33,6 @@ export default function CreateOrderPage() {
     expectedDuration: "",
     targetAudience: "",
     deliveryDate: "",
-    budget: "",
     additionalRequirements: "",
   });
 
@@ -63,7 +65,6 @@ export default function CreateOrderPage() {
         const plan = result.plans.find(p => p.id === parseInt(planId!));
         if (plan) {
           setSelectedPlan(plan);
-          setFormData(prev => ({ ...prev, budget: plan.price.toString() }));
         }
       }
     } catch (err) {
@@ -85,8 +86,14 @@ export default function CreateOrderPage() {
     if (!formData.videoType.trim()) {
       newErrors.videoType = "请说明视频类型";
     }
-    if (!formData.expectedDuration.trim()) {
-      newErrors.expectedDuration = "请输入预期时长";
+    if (!formData.expectedDuration.trim() || parseInt(formData.expectedDuration) <= 0) {
+      newErrors.expectedDuration = "请输入有效的预期时长";
+    }
+    if (!formData.targetAudience.trim()) {
+      newErrors.targetAudience = "请输入目标受众";
+    }
+    if (!formData.deliveryDate.trim()) {
+      newErrors.deliveryDate = "请选择期望交付日期";
     }
 
     setErrors(newErrors);
@@ -100,24 +107,51 @@ export default function CreateOrderPage() {
       return;
     }
 
+    if (!kolId || !planId) {
+      toast({
+        variant: "error",
+        title: "错误",
+        description: "缺少必要参数",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // TODO: 调用创建订单的 API
-      console.log("Creating order with data:", {
-        kol_id: kolId,
-        plan_id: planId,
-        ...formData,
+      const result = await createKolOrder({
+        kol_id: parseInt(kolId),
+        plan_id: parseInt(planId),
+        title: formData.title,
+        requirement_description: formData.description,
+        video_type: formData.videoType,
+        video_duration: parseInt(formData.expectedDuration),
+        target_audience: formData.targetAudience,
+        expected_delivery_date: formData.deliveryDate,
+        additional_requirements: formData.additionalRequirements || undefined,
       });
 
-      // 模拟 API 调用
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // 成功后跳转到订单列表
-      router.push("/kol/orders");
+      if (isSuccessResponse(result.base_resp)) {
+        toast({
+          title: "成功",
+          description: "订单创建成功！",
+        });
+        // 成功后跳转到订单列表
+        router.push("/kol/orders/placed");
+      } else {
+        toast({
+          variant: "error",
+          title: "失败",
+          description: result.base_resp.msg || "创建订单失败",
+        });
+      }
     } catch (err) {
       console.error("Failed to create order:", err);
-      alert("创建订单失败，请重试");
+      toast({
+        variant: "error",
+        title: "错误",
+        description: "创建订单失败，请重试",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -246,24 +280,38 @@ export default function CreateOrderPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* 目标受众 */}
                   <div className="space-y-2">
-                    <Label htmlFor="targetAudience">目标受众</Label>
+                    <Label htmlFor="targetAudience">目标受众 *</Label>
                     <Input
                       id="targetAudience"
                       placeholder="例如：18-35岁加密货币爱好者"
                       value={formData.targetAudience}
                       onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                      className={errors.targetAudience ? "border-red-500" : ""}
                     />
+                    {errors.targetAudience && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.targetAudience}
+                      </p>
+                    )}
                   </div>
 
                   {/* 期望交付日期 */}
                   <div className="space-y-2">
-                    <Label htmlFor="deliveryDate">期望交付日期</Label>
+                    <Label htmlFor="deliveryDate">期望交付日期 *</Label>
                     <Input
                       id="deliveryDate"
                       type="date"
                       value={formData.deliveryDate}
                       onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
+                      className={errors.deliveryDate ? "border-red-500" : ""}
                     />
+                    {errors.deliveryDate && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.deliveryDate}
+                      </p>
+                    )}
                   </div>
                 </div>
 

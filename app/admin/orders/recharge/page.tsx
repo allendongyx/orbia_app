@@ -34,6 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { SearchBar } from "@/components/admin/search-bar";
 import { Pagination } from "@/components/admin/pagination";
+import { TruncatedText } from "@/components/ui/truncated-text";
 import { getIconContainer } from "@/lib/design-system";
 import { isSuccessResponse } from "@/lib/api-client";
 import {
@@ -261,25 +262,25 @@ export default function AdminRechargeOrdersPage() {
       title: "总订单数",
       value: total.toString(),
       icon: FileText,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "待确认",
       value: orders.filter((o) => o.status === "pending").length.toString(),
       icon: Clock,
-      gradient: "yellow",
+      gradient: "orange" as const,
     },
     {
       title: "已确认",
       value: orders.filter((o) => o.status === "confirmed").length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "总金额",
       value: `$${orders.filter(o => o.status === 'confirmed').reduce((sum, order) => sum + parseFloat(order.amount), 0).toFixed(2)}`,
       icon: DollarSign,
-      gradient: "purple",
+      gradient: "purple" as const,
     },
   ];
 
@@ -303,7 +304,7 @@ export default function AdminRechargeOrdersPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as 'blue' | 'yellow' | 'green' | 'purple' | 'orange' | 'red')}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
@@ -355,144 +356,150 @@ export default function AdminRechargeOrdersPage() {
 
       {/* 订单列表 */}
       <Card className="border-gray-200 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  订单号
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  用户
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  金额
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  支付方式
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  用户钱包
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  状态
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  创建时间
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+        <div className="relative">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="ml-3 text-gray-600">加载中...</span>
-                    </div>
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    订单号
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    用户
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    金额
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    支付方式
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    用户钱包
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    状态
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    创建时间
+                  </th>
+                  <th className="sticky right-0 bg-gray-50 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200">
+                    操作
+                  </th>
                 </tr>
-              ) : orders.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                    没有找到充值订单
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order) => {
-                  const networkInfo = getNetworkInfo(order.payment_network);
-                  return (
-                    <tr key={order.order_id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-mono text-gray-900">
-                          {order.order_id}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">用户 ID: {order.user_id}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-green-600">
-                          {formatAmount(order.amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit">
-                            {order.payment_type === 'crypto' ? '加密货币' : '在线支付'}
-                          </Badge>
-                          {order.payment_network && networkInfo && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <div
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: networkInfo.color }}
-                              />
-                              <span>{networkInfo.name}</span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs font-mono text-gray-500 max-w-[150px] truncate">
-                          {order.user_crypto_address || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(order.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(order.created_at).toLocaleDateString("zh-CN")}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {new Date(order.created_at).toLocaleTimeString("zh-CN")}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          {order.payment_type === 'crypto' && order.payment_address && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenExplorer(order)}
-                              title="在区块链浏览器中查看"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {order.status === "pending" && (
-                            <>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-3 text-gray-600">加载中...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                      没有找到充值订单
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => {
+                    const networkInfo = getNetworkInfo(order.payment_network);
+                    return (
+                      <tr key={order.order_id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <TruncatedText 
+                            text={order.order_id} 
+                            maxLength={16}
+                            className="text-gray-900"
+                          />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs text-gray-900">用户 ID: {order.user_id}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs font-semibold text-green-600">
+                            {formatAmount(order.amount)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className="w-fit text-xs">
+                              {order.payment_type === 'crypto' ? '加密货币' : '在线支付'}
+                            </Badge>
+                            {order.payment_network && networkInfo && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <div
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: networkInfo.color }}
+                                />
+                                <span>{networkInfo.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <TruncatedText 
+                            text={order.user_crypto_address || '-'} 
+                            maxLength={12}
+                            className="text-gray-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {getStatusBadge(order.status)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs text-gray-500">
+                            {new Date(order.created_at).toLocaleDateString("zh-CN")}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {new Date(order.created_at).toLocaleTimeString("zh-CN")}
+                          </div>
+                        </td>
+                        <td className="sticky right-0 bg-white px-4 py-3 whitespace-nowrap text-right text-sm font-medium border-l border-gray-200">
+                          <div className="flex items-center justify-end gap-1">
+                            {order.payment_type === 'crypto' && order.payment_address && (
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleOpenConfirmDialog(order)}
-                                className="text-green-600 hover:text-green-700"
+                                onClick={() => handleOpenExplorer(order)}
+                                title="在区块链浏览器中查看"
                               >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                确认
+                                <ExternalLink className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenRejectDialog(order)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                拒绝
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                            )}
+                            {order.status === "pending" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenConfirmDialog(order)}
+                                  className="text-green-600 hover:text-green-700 text-xs px-2"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  确认
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenRejectDialog(order)}
+                                  className="text-red-600 hover:text-red-700 text-xs px-2"
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  拒绝
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* 分页 */}

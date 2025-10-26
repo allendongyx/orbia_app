@@ -1,377 +1,435 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Send,
-  Paperclip,
-  Image as ImageIcon,
-  File,
-  Download,
+  AlertCircle,
   CheckCircle2,
   Clock,
-  AlertCircle,
   XCircle,
   Calendar,
   DollarSign,
   User,
   Package,
+  FileText,
+  Video,
+  Users as UsersIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { getIconContainer } from "@/lib/design-system";
+import { getKolOrder, KolOrderInfo } from "@/lib/api/kol-order";
+import { isSuccessResponse } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
-// 模拟订单数据
-const mockOrderData: Record<string, any> = {
-  "ORD-2024-001": {
-    id: "ORD-2024-001",
-    kol: {
-      id: "1",
-      name: "Vitalik Buterin",
-      avatar: "VB",
-    },
-    service: "21-60s Video Campaign",
-    price: "$32,000",
-    status: "in_progress",
-    createdAt: "2024-01-15",
-    deadline: "2024-02-01",
-    description: "Create an engaging 45-second video explaining DeFi yield farming strategies for beginners.",
-    deliverables: [
-      "1x 45-second video",
-      "Script approval",
-      "2 rounds of revisions",
-      "Final video in 4K",
-    ],
-    timeline: [
-      { date: "2024-01-15", event: "Order Created", status: "completed" },
-      { date: "2024-01-16", event: "Payment Confirmed", status: "completed" },
-      { date: "2024-01-18", event: "Script Submitted", status: "completed" },
-      { date: "2024-01-22", event: "Script Approved", status: "completed" },
-      { date: "2024-01-25", event: "Filming in Progress", status: "in_progress" },
-      { date: "2024-01-30", event: "Draft Review", status: "pending" },
-      { date: "2024-02-01", event: "Final Delivery", status: "pending" },
-    ],
-  },
-};
-
-// 模拟聊天消息
-const mockMessages = [
-  {
-    id: "1",
-    sender: "kol",
-    content: "Hi! Thanks for booking my service. I've received your brief and it looks great. I'll start working on the script tomorrow.",
-    timestamp: "2024-01-15 14:30",
-    attachments: [],
-  },
-  {
-    id: "2",
-    sender: "user",
-    content: "That's wonderful! Looking forward to seeing the script. Please make sure to emphasize the security aspects of DeFi.",
-    timestamp: "2024-01-15 15:45",
-    attachments: [],
-  },
-  {
-    id: "3",
-    sender: "kol",
-    content: "Absolutely! I've attached the first draft of the script for your review.",
-    timestamp: "2024-01-18 10:20",
-    attachments: [
-      { name: "DeFi_Script_v1.pdf", type: "pdf", size: "245 KB" },
-    ],
-  },
-  {
-    id: "4",
-    sender: "user",
-    content: "Looks great! Just a few minor tweaks needed on page 2. Can you adjust the intro section?",
-    timestamp: "2024-01-19 09:15",
-    attachments: [],
-  },
-  {
-    id: "5",
-    sender: "kol",
-    content: "Done! Here's the updated version. Please let me know if this works better.",
-    timestamp: "2024-01-20 16:40",
-    attachments: [
-      { name: "DeFi_Script_v2.pdf", type: "pdf", size: "248 KB" },
-    ],
-  },
-  {
-    id: "6",
-    sender: "user",
-    content: "Perfect! Approved. Looking forward to the video.",
-    timestamp: "2024-01-22 11:00",
-    attachments: [],
-  },
-  {
-    id: "7",
-    sender: "kol",
-    content: "Great! I'm starting the filming today. Will send you a draft by early next week.",
-    timestamp: "2024-01-25 08:30",
-    attachments: [],
-  },
-];
+type OrderStatus = "pending_payment" | "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "refunded";
 
 export default function OrderDetail() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  const [messages, setMessages] = useState(mockMessages);
-  const [newMessage, setNewMessage] = useState("");
-
-  const order = mockOrderData[orderId];
-
-  // 自动滚动到最新消息
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const [order, setOrder] = useState<KolOrderInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (orderId) {
+      loadOrderDetail();
+    }
+  }, [orderId]);
 
-  // 发送消息
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-
-    const message = {
-      id: Date.now().toString(),
-      sender: "user",
-      content: newMessage,
-      timestamp: new Date().toLocaleString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      attachments: [],
-    };
-
-    setMessages([...messages, message]);
-    setNewMessage("");
+  const loadOrderDetail = async () => {
+    setLoading(true);
+    try {
+      const result = await getKolOrder({ order_id: orderId });
+      
+      if (isSuccessResponse(result.base_resp) && result.order) {
+        setOrder(result.order);
+      } else {
+        toast({
+          title: "加载失败",
+          description: result.base_resp.msg || "加载订单详情失败",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load order detail:", err);
+      toast({
+        title: "错误",
+        description: "加载订单详情失败",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">加载中...</p>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Not Found</h2>
-        <p className="text-gray-600 mb-4">The order you're looking for doesn't exist.</p>
-        <Button onClick={() => router.push("/kol/orders")}>Back to Orders</Button>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">订单不存在</h2>
+        <p className="text-gray-600 mb-4">您查找的订单不存在或已被删除</p>
+        <Button onClick={() => router.back()}>返回</Button>
       </div>
     );
   }
 
   // 状态配置
-  const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
+  const statusConfig: Record<
+    OrderStatus,
+    { label: string; className: string; icon: React.ComponentType<{ className?: string }> }
+  > = {
+    pending_payment: {
+      label: "待支付",
+      className: "bg-gray-100 text-gray-700",
+      icon: Clock,
+    },
     pending: {
-      label: "Pending",
+      label: "待确认",
       className: "bg-yellow-100 text-yellow-700",
       icon: Clock,
     },
+    confirmed: {
+      label: "已确认",
+      className: "bg-blue-100 text-blue-700",
+      icon: CheckCircle2,
+    },
     in_progress: {
-      label: "In Progress",
+      label: "进行中",
       className: "bg-blue-100 text-blue-700",
       icon: Clock,
     },
     completed: {
-      label: "Completed",
+      label: "已完成",
       className: "bg-green-100 text-green-700",
       icon: CheckCircle2,
     },
     cancelled: {
-      label: "Cancelled",
+      label: "已取消",
       className: "bg-red-100 text-red-700",
+      icon: XCircle,
+    },
+    refunded: {
+      label: "已退款",
+      className: "bg-purple-100 text-purple-700",
       icon: XCircle,
     },
   };
 
   const StatusIcon = statusConfig[order.status].icon;
 
+  // 构建时间线
+  const timeline: Array<{ date: string; event: string; status: "completed" | "in_progress" | "pending" }> = [];
+  
+  timeline.push({
+    date: new Date(order.created_at).toLocaleDateString(),
+    event: "订单创建",
+    status: "completed",
+  });
+
+  if (order.status !== "pending_payment") {
+    timeline.push({
+      date: order.created_at ? new Date(order.created_at).toLocaleDateString() : "",
+      event: "支付完成",
+      status: "completed",
+    });
+  }
+
+  if (order.confirmed_at) {
+    timeline.push({
+      date: new Date(order.confirmed_at).toLocaleDateString(),
+      event: "KOL 确认接单",
+      status: "completed",
+    });
+  } else if (order.status === "pending") {
+    timeline.push({
+      date: "",
+      event: "等待 KOL 确认",
+      status: "in_progress",
+    });
+  }
+
+  if (order.status === "in_progress") {
+    timeline.push({
+      date: "",
+      event: "制作中",
+      status: "in_progress",
+    });
+  } else if (order.completed_at) {
+    timeline.push({
+      date: new Date(order.completed_at).toLocaleDateString(),
+      event: "订单完成",
+      status: "completed",
+    });
+  } else if (order.cancelled_at) {
+    timeline.push({
+      date: new Date(order.cancelled_at).toLocaleDateString(),
+      event: "订单取消",
+      status: "completed",
+    });
+  } else if (["confirmed", "in_progress"].includes(order.status)) {
+    timeline.push({
+      date: "",
+      event: "等待完成",
+      status: "pending",
+    });
+  }
+
   return (
-    <div className="h-full">
-      {/* 主要内容区 - 左右布局 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-        {/* 左侧：聊天区域 */}
-        <div className="lg:col-span-2">
-          <Card className="border-0 shadow-sm h-[calc(100vh-6rem)] flex flex-col">
-            <CardHeader className="border-b">
-              <CardTitle className="flex items-center gap-2">
-                <div className={getIconContainer("small", "blue")}>
-                  <User className="h-4 w-4 text-white" />
-                </div>
-                Messages with {order.kol.name}
-              </CardTitle>
-            </CardHeader>
+    <div className="space-y-6">
+      {/* 返回按钮 */}
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="gap-2 hover:bg-gray-100"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        返回
+      </Button>
 
-            {/* 消息列表 */}
-            <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div className={`max-w-[70%] ${message.sender === "user" ? "order-2" : "order-1"}`}>
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        message.sender === "user"
-                          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      
-                      {/* 附件 */}
-                      {message.attachments.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {message.attachments.map((attachment, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex items-center gap-2 p-2 rounded-lg ${
-                                message.sender === "user"
-                                  ? "bg-white/20"
-                                  : "bg-white"
-                              }`}
-                            >
-                              <File className="h-4 w-4" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">{attachment.name}</p>
-                                <p className="text-xs opacity-70">{attachment.size}</p>
-                              </div>
-                              <Download className="h-4 w-4 cursor-pointer" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <p className={`text-xs text-gray-500 mt-1 ${message.sender === "user" ? "text-right" : "text-left"}`}>
-                      {message.timestamp}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </CardContent>
-
-            {/* 消息输入框 */}
-            <div className="border-t p-4">
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="rounded-xl shrink-0">
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-xl shrink-0">
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Input
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                  className="flex-1 rounded-xl"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 rounded-xl"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
+      {/* 页面标题 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={getIconContainer("medium", "blue")}>
+            <Package className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">订单详情</h1>
+            <p className="text-gray-600">订单ID: {order.order_id}</p>
+          </div>
         </div>
+        <Badge className={`${statusConfig[order.status].className} text-base px-4 py-2`}>
+          <StatusIcon className="h-5 w-5 mr-2" />
+          {statusConfig[order.status].label}
+        </Badge>
+      </div>
 
-        {/* 右侧：订单信息 */}
-        <div className="space-y-6">
-          {/* KOL 信息 */}
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center text-center">
-                <Avatar className="h-20 w-20 border-4 border-gray-200 mb-3">
-                  <AvatarImage
-                    src={`https://randomuser.me/api/portraits/men/${order.kol.id}.jpg`}
-                    alt={order.kol.name}
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white text-2xl font-semibold">
-                    {order.kol.avatar}
-                  </AvatarFallback>
-                </Avatar>
-                <h2 className="text-xl font-bold text-gray-900 mb-1">{order.kol.name}</h2>
-                <p className="text-sm text-gray-600 mb-3">{order.service}</p>
-                <Badge className={`${statusConfig[order.status].className} text-sm px-3 py-1`}>
-                  <StatusIcon className="h-4 w-4 mr-1" />
-                  {statusConfig[order.status].label}
-                </Badge>
-                <Separator className="my-4" />
-                <p className="text-xs text-gray-500 w-full text-left">Order ID</p>
-                <p className="text-sm font-medium text-gray-900 w-full text-left">{order.id}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 订单详情 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 左侧：订单信息 */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* 订单基本信息 */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Package className="h-5 w-5 text-purple-600" />
-                Order Info
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                订单信息
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{order.title}</h3>
+                <Badge variant="secondary">{order.plan_type}</Badge>
+              </div>
+              <Separator />
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Price</span>
-                  <span className="text-xl font-bold text-green-600">{order.price}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Created</span>
-                  <span className="text-sm font-medium text-gray-900">{order.createdAt}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Deadline</span>
-                  <span className="text-sm font-medium text-gray-900">{order.deadline}</span>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">服务方案</p>
+                  <p className="text-sm font-medium text-gray-900">{order.plan_title}</p>
+                  <p className="text-sm text-gray-600 mt-1">{order.plan_description}</p>
                 </div>
                 <Separator />
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Description</p>
-                  <p className="text-sm text-gray-700 leading-relaxed">{order.description}</p>
+                  <p className="text-xs text-gray-500 mb-1">合作需求描述</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{order.requirement_description}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* 交付物 */}
+          {/* 项目详情 */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">Deliverables</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-purple-600" />
+                项目详情
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">视频类型</p>
+                  <p className="text-sm font-medium text-gray-900">{order.video_type}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">预期时长</p>
+                  <p className="text-sm font-medium text-gray-900">{order.video_duration} 秒</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">目标受众</p>
+                  <p className="text-sm font-medium text-gray-900">{order.target_audience}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">期望交付日期</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(order.expected_delivery_date).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              {order.additional_requirements && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">额外要求</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{order.additional_requirements}</p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 取消原因 */}
+          {order.reject_reason && (
+            <Card className="border-0 shadow-sm bg-red-50">
+              <CardContent className="p-4">
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">
+                      {order.status === "cancelled" ? "取消原因" : "拒绝原因"}
+                    </h4>
+                    <p className="text-sm text-gray-700">{order.reject_reason}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* 右侧：KOL信息和其他 */}
+        <div className="space-y-6">
+          {/* KOL 信息 */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                KOL 信息
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2">
-                {order.deliverables.map((item: string, idx: number) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="flex flex-col items-center text-center">
+                <Avatar className="h-20 w-20 border-4 border-gray-200 mb-3">
+                  <AvatarImage src={order.kol_avatar_url} alt={order.kol_display_name} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white text-2xl font-semibold">
+                    {order.kol_display_name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">{order.kol_display_name}</h2>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 客户信息 */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <UsersIcon className="h-5 w-5 text-purple-600" />
+                客户信息
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">客户昵称</p>
+                <p className="text-sm font-medium text-gray-900">{order.user_nickname}</p>
+              </div>
+              {order.team_name && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">所属团队</p>
+                    <p className="text-sm font-medium text-gray-900">{order.team_name}</p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 金额信息 */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-emerald-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                订单金额
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <p className="text-4xl font-bold text-green-600">${order.plan_price}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 时间信息 */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Calendar className="h-5 w-5 text-orange-600" />
+                时间信息
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">创建时间</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {new Date(order.created_at).toLocaleString()}
+                </p>
+              </div>
+              {order.confirmed_at && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">确认时间</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(order.confirmed_at).toLocaleString()}
+                    </p>
+                  </div>
+                </>
+              )}
+              {order.completed_at && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">完成时间</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(order.completed_at).toLocaleString()}
+                    </p>
+                  </div>
+                </>
+              )}
+              {order.cancelled_at && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">取消时间</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(order.cancelled_at).toLocaleString()}
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
           {/* 时间线 */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">Timeline</CardTitle>
+              <CardTitle className="text-base">订单进度</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {order.timeline.map((item: any, idx: number) => (
+                {timeline.map((item, idx) => (
                   <div key={idx} className="flex gap-3">
                     <div className="shrink-0">
                       {item.status === "completed" ? (
@@ -384,29 +442,11 @@ export default function OrderDetail() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{item.event}</p>
-                      <p className="text-xs text-gray-500">{item.date}</p>
+                      {item.date && <p className="text-xs text-gray-500">{item.date}</p>}
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* 操作按钮 */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-            <CardContent className="p-6 space-y-3">
-              <Button
-                variant="outline"
-                className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-xl"
-              >
-                Request Revision
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full bg-white/10 text-white hover:bg-white/20 rounded-xl border-white/20"
-              >
-                Cancel Order
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -414,4 +454,3 @@ export default function OrderDetail() {
     </div>
   );
 }
-

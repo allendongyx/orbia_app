@@ -130,17 +130,21 @@ export function useFileUpload({
   };
 }
 
+export interface UseImageUploadReturn extends UseFileUploadReturn {
+  uploadImage: (file: File) => Promise<string | null>;
+}
+
 /**
  * 图片上传 Hook（兼容旧代码）
  */
 export function useImageUpload(
   options: Omit<UseFileUploadOptions, "isImageOnly"> = {}
-): UseFileUploadReturn {
+): UseImageUploadReturn {
   const result = useFileUpload({ ...options, isImageOnly: true });
   
   return {
     ...result,
     uploadImage: result.uploadFile, // 保持旧的 API 命名
-  } as UseFileUploadReturn & { uploadImage: typeof result.uploadFile };
+  };
 }
 

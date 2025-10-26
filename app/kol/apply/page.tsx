@@ -13,8 +13,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { applyKol, getKolInfo, ApplyKolReq, KolInfo } from "@/lib/api/kol";
 import { isSuccessResponse } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
-import LocationSelector from "@/components/common/location-selector";
-import LanguageSelector from "@/components/common/language-selector";
+import LocationSelectorDict from "@/components/common/location-selector-dict";
+import LanguageSelectorDict from "@/components/common/language-selector-dict";
+import { ImgsSelector, EmojiItem } from "@/components/common/imgs-selector";
+import avatarEmojis from "@/data/avatar-emojis.json";
 
 export default function ApplyKOLPage() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function ApplyKOLPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kolInfo, setKolInfo] = useState<KolInfo | null>(null);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
   // 表单数据 (country 在 UI 中使用数组，提交时转换为字符串)
   const [formData, setFormData] = useState({
@@ -34,9 +37,8 @@ export default function ApplyKOLPage() {
     youtube_url: "",
     x_url: "",
     discord_url: "",
-    language_codes: [],
-    language_names: [],
-    tags: [],
+    language_codes: [] as string[],
+    tags: [] as string[],
   });
 
   const [tagInput, setTagInput] = useState("");
@@ -61,11 +63,17 @@ export default function ApplyKOLPage() {
     setLoading(true);
     try {
       const result = await getKolInfo({});
+      // 如果成功返回且有 KOL 信息，说明用户已经申请过
       if (isSuccessResponse(result.base_resp) && result.kol_info) {
         setKolInfo(result.kol_info);
+      } else {
+        // 接口返回成功但没有 kol_info，说明用户还没有申请
+        setKolInfo(null);
       }
     } catch (err) {
-      console.error("Failed to check KOL status:", err);
+      // 接口调用失败（例如 404），说明用户还没有申请过
+      console.log("User has not applied as KOL yet");
+      setKolInfo(null);
     } finally {
       setLoading(false);
     }
@@ -91,12 +99,20 @@ export default function ApplyKOLPage() {
   };
 
   // 处理语言选择
-  const handleLanguageChange = (languages: Array<{ code: string; name: string }>) => {
+  const handleLanguageChange = (languageCodes: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      language_codes: languages.map(l => l.code),
-      language_names: languages.map(l => l.name),
+      language_codes: languageCodes,
     }));
+  };
+
+  // 处理头像选择
+  const handleAvatarChange = (avatarUrl: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      avatar_url: avatarUrl,
+    }));
+    setShowAvatarSelector(false);
   };
 
   // 提交申请
@@ -125,10 +141,14 @@ export default function ApplyKOLPage() {
     setSubmitting(true);
 
     try {
+      // language_names 使用 language_codes（字典的 code）
+      const language_names = formData.language_codes;
+      
       // 转换数据格式：country 从数组转为字符串（取第一个）
       const submitData: ApplyKolReq = {
         ...formData,
         country: formData.country[0] || "",
+        language_names,
       };
       
       const result = await applyKol(submitData);
@@ -209,7 +229,7 @@ export default function ApplyKOLPage() {
                     Application Under Review
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Your application is currently being reviewed by our team. We'll notify you once it's processed.
+                    Your application is currently being reviewed by our team. We&apos;ll notify you once it&apos;s processed.
                   </p>
                   <Button
                     variant="outline"
@@ -335,6 +355,38 @@ export default function ApplyKOLPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
 
+              {/* 头像 - 放在首位 */}
+              <div>
+                <Label htmlFor="avatar_url">
+                  Avatar <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex items-center gap-4 mt-1.5">
+                  <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-gray-200">
+                    {formData.avatar_url ? (
+                      <img
+                        src={formData.avatar_url}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold text-lg">
+                        {formData.display_name ? formData.display_name.slice(0, 2).toUpperCase() : "??"}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAvatarSelector(true)}
+                  >
+                    {formData.avatar_url ? "Change Avatar" : "Select Avatar"}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Choose an emoji or upload your own image
+                </p>
+              </div>
+
               <div>
                 <Label htmlFor="display_name">
                   Display Name <span className="text-red-500">*</span>
@@ -377,7 +429,7 @@ export default function ApplyKOLPage() {
                   Country <span className="text-red-500">*</span>
                 </Label>
                 <div className="mt-1.5">
-                  <LocationSelector
+                  <LocationSelectorDict
                     value={formData.country}
                     onChange={(value) =>
                       setFormData((prev) => ({ ...prev, country: value.slice(0, 1) }))
@@ -394,34 +446,16 @@ export default function ApplyKOLPage() {
                 <Label htmlFor="languages">
                   Languages <span className="text-red-500">*</span>
                 </Label>
-                <LanguageSelector
-                  value={formData.language_codes.map((code, idx) => ({
-                    code,
-                    name: formData.language_names[idx] || code,
-                  }))}
-                  onChange={handleLanguageChange}
-                  className="mt-1.5"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Select the languages you can create content in
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="avatar_url">Avatar URL (Optional)</Label>
-                <Input
-                  id="avatar_url"
-                  type="url"
-                  value={formData.avatar_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      avatar_url: e.target.value,
-                    }))
-                  }
-                  placeholder="https://example.com/avatar.jpg"
-                  className="mt-1.5"
-                />
+                <div className="mt-1.5">
+                  <LanguageSelectorDict
+                    value={formData.language_codes}
+                    onChange={handleLanguageChange}
+                    placeholder="选择语言"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select the languages you can create content in
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -582,6 +616,20 @@ export default function ApplyKOLPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Avatar Selector */}
+      <ImgsSelector
+        open={showAvatarSelector}
+        onOpenChange={setShowAvatarSelector}
+        currentImage={formData.avatar_url}
+        onImageChange={handleAvatarChange}
+        title="Select Avatar"
+        description="Choose an emoji or upload your own image"
+        emojiList={avatarEmojis as EmojiItem[]}
+        avatarShape="circle"
+        gridCols={6}
+        allowUpload={true}
+      />
     </div>
   );
 }

@@ -125,7 +125,7 @@ export default function KOLDetail() {
       <div className="flex flex-col items-center justify-center h-96">
         <Sparkles className="h-16 w-16 text-gray-400 mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">KOL Not Found</h2>
-        <p className="text-gray-600 mb-4">The KOL you're looking for doesn't exist.</p>
+        <p className="text-gray-600 mb-4">The KOL you&apos;re looking for doesn&apos;t exist.</p>
         <Button onClick={() => router.push("/kol/marketplace")}>Back to Marketplace</Button>
       </div>
     );
@@ -178,7 +178,7 @@ export default function KOLDetail() {
       {
         id: "1",
         title: "Understanding DeFi Yield Farming",
-        cover: kol.masterpiece_works[0].cover,
+        cover: kol?.masterpiece_works?.[0]?.cover || "",
         views: "1.2M",
         likes: "45K",
         comments: "2.3K",
@@ -187,7 +187,7 @@ export default function KOLDetail() {
       {
         id: "2",
         title: "NFT Market Analysis 2024",
-        cover: kol.masterpiece_works[1]?.cover || kol.masterpiece_works[0].cover,
+        cover: kol?.masterpiece_works?.[1]?.cover || kol?.masterpiece_works?.[0]?.cover || "",
         views: "980K",
         likes: "38K",
         comments: "1.9K",
@@ -196,7 +196,7 @@ export default function KOLDetail() {
       {
         id: "3",
         title: "Top 10 GameFi Projects",
-        cover: kol.masterpiece_works[0].cover,
+        cover: kol?.masterpiece_works?.[0]?.cover || "",
         views: "760K",
         likes: "29K",
         comments: "1.5K",
@@ -205,7 +205,7 @@ export default function KOLDetail() {
       {
         id: "4",
         title: "Blockchain Security Tips",
-        cover: kol.masterpiece_works[1]?.cover || kol.masterpiece_works[0].cover,
+        cover: kol?.masterpiece_works?.[1]?.cover || kol?.masterpiece_works?.[0]?.cover || "",
         views: "650K",
         likes: "25K",
         comments: "1.2K",
@@ -218,9 +218,9 @@ export default function KOLDetail() {
       { platform: "Twitter", followers: "890K", engagement: "3.8%" },
     ],
     pricingPlans: [
-      { duration: "15-20s", price: "$" + parseInt(kol.offer_price.replace(/[^0-9]/g, "")) * 0.7 + "k", description: "Short-form content" },
-      { duration: "21-60s", price: kol.offer_price, description: "Standard content", popular: true },
-      { duration: "60s+", price: "$" + parseInt(kol.offer_price.replace(/[^0-9]/g, "")) * 1.5 + "k", description: "Long-form content" },
+      { duration: "15-20s", price: "$" + (parseInt((kol?.offer_price || "0").replace(/[^0-9]/g, "")) * 0.7) + "k", description: "Short-form content" },
+      { duration: "21-60s", price: kol?.offer_price || "$0k", description: "Standard content", popular: true },
+      { duration: "60s+", price: "$" + (parseInt((kol?.offer_price || "0").replace(/[^0-9]/g, "")) * 1.5) + "k", description: "Long-form content" },
     ],
   };
 

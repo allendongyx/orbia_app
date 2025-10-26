@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LogOut, MoreVertical, LogIn, Settings2, Camera, ChevronDown } from "lucide-react";
+import { LogOut, MoreVertical, Settings2, Camera, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,34 +16,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { mainNavItems, bottomNavItems, adminNavItems } from "@/lib/navigation-config";
 import { useAuth } from "@/contexts/auth-context";
-import { LoginModal } from "@/components/auth/login-modal";
 import { AvatarSelector } from "@/components/auth/avatar-selector";
 import { TeamSelector } from "@/components/layout/team-selector";
 
-interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {}
+type SidebarNavProps = React.HTMLAttributes<HTMLElement>;
 
 export function SidebarNav({ className, ...props }: SidebarNavProps) {
   const pathname = usePathname();
   const { user, isLoggedIn, logout, refreshUser } = useAuth();
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(["KOLs"]); // 默认展开 KOLs
   
   // 判断用户是否为管理员
   const isAdmin = user?.role === 'admin';
-
-  // 监听全局登录模态框触发事件
-  useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setShowLoginModal(true);
-    };
-
-    window.addEventListener('openLoginModal', handleOpenLoginModal);
-
-    return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal);
-    };
-  }, []);
+  
+  // 判断用户是否为KOL（已通过审核）
+  const isKol = user?.kol_info?.status === 'approved';
 
   const handleAvatarChange = async (avatarUrl: string) => {
     // Refresh user data after avatar change
@@ -127,10 +114,75 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
                   {/* 子菜单 */}
                   {isExpanded && (
                     <div className="ml-6 mt-1 space-y-0.5">
-                      {item.children.map((child) => {
+                      {item.children
+                        .filter(child => !child.requireKol || isKol) // 过滤掉需要KOL权限但用户不是KOL的菜单项
+                        .map((child) => {
+                        const ChildIcon = child.icon;
+                        const isChildExpanded = expandedMenus.includes(child.title);
+                        
+                        // 如果子菜单还有子菜单
+                        if (child.children) {
+                          const hasActiveGrandChild = child.children.some(grandChild =>
+                            pathname === grandChild.href || pathname?.startsWith(grandChild.href + "/")
+                          );
+                          
+                          return (
+                            <div key={child.title}>
+                              <button
+                                onClick={() => toggleMenu(child.title)}
+                                className={cn(
+                                  "flex items-center justify-between w-full gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                                  hasActiveGrandChild
+                                    ? "text-gray-900 font-medium"
+                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-normal"
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <ChildIcon className="h-[16px] w-[16px] shrink-0" />
+                                  <span>{child.title}</span>
+                                </div>
+                                <ChevronDown 
+                                  className={cn(
+                                    "h-4 w-4 transition-transform",
+                                    isChildExpanded && "rotate-180"
+                                  )} 
+                                />
+                              </button>
+                              
+                              {/* 孙子菜单 */}
+                              {isChildExpanded && (
+                                <div className="ml-6 mt-1 space-y-0.5">
+                                  {child.children.map((grandChild) => {
+                                    if (!grandChild.href) return null;
+                                    
+                                    const GrandChildIcon = grandChild.icon;
+                                    const isGrandChildActive = pathname === grandChild.href || pathname?.startsWith(grandChild.href + "/");
+                                    
+                                    return (
+                                      <Link
+                                        key={grandChild.href}
+                                        href={grandChild.href}
+                                        className={cn(
+                                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                                          isGrandChildActive
+                                            ? "bg-gray-900 text-white font-medium"
+                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-normal"
+                                        )}
+                                      >
+                                        <GrandChildIcon className="h-[14px] w-[14px] shrink-0" />
+                                        <span>{grandChild.title}</span>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // 普通子菜单项
                         if (!child.href) return null;
                         
-                        const ChildIcon = child.icon;
                         const isChildActive = pathname === child.href || pathname?.startsWith(child.href + "/");
                         
                         return (
@@ -298,8 +350,8 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
           })}
         </div>
 
-        {/* User Info / Login Button */}
-        {isLoggedIn && user ? (
+        {/* User Info - Only shown when logged in */}
+        {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 w-full rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors group">
@@ -383,20 +435,10 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-3 px-3 py-2 text-sm font-normal text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-            onClick={() => setShowLoginModal(true)}
-          >
-            <LogIn className="h-[18px] w-[18px]" />
-            <span>Sign In</span>
-          </Button>
         )}
       </div>
 
       {/* Modals */}
-      <LoginModal open={showLoginModal} onOpenChange={setShowLoginModal} />
       <AvatarSelector 
         open={showAvatarSelector} 
         onOpenChange={setShowAvatarSelector}

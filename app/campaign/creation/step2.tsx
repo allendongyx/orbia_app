@@ -115,7 +115,7 @@ export default function Step2() {
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Select one or multiple age groups to target. Choose "All Ages" for maximum reach</p>
+                  <p>Select one or multiple age groups to target. Choose &quot;All Ages&quot; for maximum reach</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

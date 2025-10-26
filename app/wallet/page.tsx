@@ -46,6 +46,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TransactionDetailModal } from "@/components/wallet/transaction-detail-modal";
+import { TruncatedText } from "@/components/ui/truncated-text";
 import {
   getWalletInfo,
   getTransactionList,
@@ -161,11 +162,11 @@ export default function Wallet() {
     }
   };
 
-  const loadRechargeOrders = async (status?: string) => {
+  const loadRechargeOrders = async (status?: 'pending' | 'confirmed' | 'failed' | 'cancelled') => {
     try {
       setRechargeOrdersLoading(true);
       const response = await getMyRechargeOrders({
-        status: status as any,
+        status: status,
         page: rechargeCurrentPage,
         page_size: pageSize,
       });
@@ -314,12 +315,24 @@ export default function Wallet() {
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipPayload {
+    name: string;
+    value: number;
+    color: string;
+  }
+
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayload[];
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-3">
           <p className="font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {formatCurrency(entry.value)}
             </p>
@@ -340,32 +353,33 @@ export default function Wallet() {
 
   return (
     <div className="space-y-6">
-      {/* 顶部余额卡片 */}
+      {/* 顶部余额和统计卡片 */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+        {/* 当前余额卡片 - 更突出 */}
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <WalletIcon className="h-6 w-6" />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <WalletIcon className="h-6 w-6 text-blue-600" />
               </div>
-              <Link href="/wallet/recharge">
-                <Button
-                  size="sm"
-                  className="bg-white text-blue-600 hover:bg-white/90"
-                >
-                  <ArrowUpRight className="mr-1 h-4 w-4" />
-                  充值
-                </Button>
-              </Link>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-blue-100">当前余额</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">当前余额</p>
               <p className="text-3xl font-bold">{formatCurrency(currentBalance)}</p>
               {walletInfo && parseFloat(walletInfo.frozen_balance) > 0 && (
-                <p className="text-xs text-blue-100">
+                <p className="text-xs text-muted-foreground">
                   冻结: {formatCurrency(parseFloat(walletInfo.frozen_balance))}
                 </p>
               )}
+              <Link href="/wallet/recharge" className="block">
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  size="lg"
+                >
+                  <ArrowUpRight className="mr-2 h-5 w-5" />
+                  立即充值
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
@@ -398,11 +412,11 @@ export default function Wallet() {
               <p className="text-sm text-muted-foreground">总消费</p>
               <p className="text-2xl font-bold">{formatCurrency(totalSpending)}</p>
               <p className="text-xs text-muted-foreground">过去7天</p>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
+        <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-green-500/10 rounded-lg">
@@ -419,7 +433,176 @@ export default function Wallet() {
         </Card>
       </div>
 
-      {/* 图表区域 */}
+      {/* 交易记录 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>交易记录</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                筛选
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportTransactions}>
+                <Download className="mr-2 h-4 w-4" />
+                导出
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="expense" className="w-full" onValueChange={handleTabChange}>
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="expense">消费账单</TabsTrigger>
+              <TabsTrigger value="recharge">充值记录</TabsTrigger>
+            </TabsList>
+
+            {/* 消费记录 */}
+            <TabsContent value="expense" className="mt-6">
+              {transactionsLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b">
+                        <TableHead className="font-medium">交易ID</TableHead>
+                        <TableHead className="font-medium">类型</TableHead>
+                        <TableHead className="font-medium">金额</TableHead>
+                        <TableHead className="font-medium">余额变化</TableHead>
+                        <TableHead className="font-medium">状态</TableHead>
+                        <TableHead className="font-medium">时间</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                            暂无消费记录
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        transactions.map((record) => (
+                          <TableRow 
+                            key={record.id}
+                            className="cursor-pointer hover:bg-muted/30 transition-colors border-b last:border-0"
+                            onClick={() => handleViewTransaction(record)}
+                          >
+                            <TableCell className="font-mono text-sm py-4">
+                              {record.transaction_id}
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <Badge variant="outline" className="font-normal">
+                                {getTransactionTypeText(record.type)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono font-medium py-4">
+                              <span className="text-red-600">
+                                -{formatAmount(record.amount)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground py-4">
+                              {formatAmount(record.balance_before)} → {formatAmount(record.balance_after)}
+                            </TableCell>
+                            <TableCell className="py-4">{getStatusBadge(record.status)}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm py-4">
+                              {new Date(record.created_at).toLocaleString('zh-CN')}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* 充值记录 */}
+            <TabsContent value="recharge" className="mt-6">
+              {rechargeOrdersLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b">
+                        <TableHead className="font-medium">订单号</TableHead>
+                        <TableHead className="font-medium">时间</TableHead>
+                        <TableHead className="font-medium">金额</TableHead>
+                        <TableHead className="font-medium">支付方式</TableHead>
+                        <TableHead className="font-medium">状态</TableHead>
+                        <TableHead className="font-medium">收款地址</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rechargeOrders.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                            暂无充值记录
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        rechargeOrders.map((order) => (
+                          <TableRow 
+                            key={order.id}
+                            className="hover:bg-muted/30 transition-colors border-b last:border-0"
+                          >
+                            <TableCell className="py-4">
+                              <TruncatedText 
+                                text={order.order_id} 
+                                maxLength={16}
+                                className="font-mono text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm py-4">
+                              {new Date(order.created_at).toLocaleString('zh-CN')}
+                            </TableCell>
+                            <TableCell className="font-mono font-medium py-4">
+                              <span className="text-green-600">
+                                +{formatAmount(order.amount)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <Badge variant="outline" className="font-normal">
+                                {order.payment_type === 'crypto' 
+                                  ? order.payment_network || '加密货币' 
+                                  : order.online_payment_platform || '在线支付'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-4">{getRechargeOrderStatusBadge(order.status)}</TableCell>
+                            <TableCell className="py-4">
+                              {order.payment_type === 'crypto' ? (
+                                <TruncatedText 
+                                  text={order.payment_address || '-'} 
+                                  maxLength={20}
+                                  className="text-muted-foreground text-sm"
+                                />
+                              ) : (
+                                <TruncatedText 
+                                  text={order.online_payment_order_id || '-'} 
+                                  maxLength={20}
+                                  className="text-muted-foreground text-sm"
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* 图表区域 - 移到交易记录下方 */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* 每日消费趋势图 */}
         <Card>
@@ -472,8 +655,8 @@ export default function Wallet() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(props: any) =>
-                    `${props.name} ${(props.percent * 100).toFixed(0)}%`
+                  label={(props) =>
+                    `${(props as unknown as { name: string; percent: number }).name} ${((props as unknown as { name: string; percent: number }).percent * 100).toFixed(0)}%`
                   }
                   outerRadius={100}
                   fill="#8884d8"
@@ -512,159 +695,6 @@ export default function Wallet() {
           </CardContent>
         </Card>
       </div>
-
-      {/* 交易记录 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>交易记录</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="mr-2 h-4 w-4" />
-                筛选
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportTransactions}>
-                <Download className="mr-2 h-4 w-4" />
-                导出
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="expense" className="w-full" onValueChange={handleTabChange}>
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="expense">消费账单</TabsTrigger>
-              <TabsTrigger value="recharge">充值记录</TabsTrigger>
-            </TabsList>
-
-            {/* 消费记录 */}
-            <TabsContent value="expense" className="mt-6">
-              {transactionsLoading ? (
-                <div className="flex items-center justify-center h-48">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>交易ID</TableHead>
-                        <TableHead>类型</TableHead>
-                        <TableHead>金额</TableHead>
-                        <TableHead>余额变化</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead>时间</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                            暂无消费记录
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        transactions.map((record) => (
-                          <TableRow 
-                            key={record.id}
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => handleViewTransaction(record)}
-                          >
-                            <TableCell className="font-mono text-sm">
-                              {record.transaction_id}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{getTransactionTypeText(record.type)}</Badge>
-                            </TableCell>
-                            <TableCell className="font-mono">
-                              <span className="text-red-600">
-                                -{formatAmount(record.amount)}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
-                              {formatAmount(record.balance_before)} → {formatAmount(record.balance_after)}
-                            </TableCell>
-                            <TableCell>{getStatusBadge(record.status)}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {new Date(record.created_at).toLocaleString('zh-CN')}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* 充值记录 */}
-            <TabsContent value="recharge" className="mt-6">
-              {rechargeOrdersLoading ? (
-                <div className="flex items-center justify-center h-48">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>订单号</TableHead>
-                        <TableHead>时间</TableHead>
-                        <TableHead>金额</TableHead>
-                        <TableHead>支付方式</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead>收款地址/交易哈希</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rechargeOrders.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                            暂无充值记录
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        rechargeOrders.map((order) => (
-                          <TableRow 
-                            key={order.id}
-                            className="cursor-pointer hover:bg-muted/50"
-                          >
-                            <TableCell className="font-mono text-sm">
-                              {order.order_id}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {new Date(order.created_at).toLocaleString('zh-CN')}
-                            </TableCell>
-                            <TableCell className="font-mono">
-                              <span className="text-green-600">
-                                +{formatAmount(order.amount)}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {order.payment_type === 'crypto' 
-                                  ? order.payment_network || '加密货币' 
-                                  : order.online_payment_platform || '在线支付'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{getRechargeOrderStatusBadge(order.status)}</TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate">
-                              {order.payment_type === 'crypto' 
-                                ? (order.crypto_tx_hash || order.payment_address || '-')
-                                : (order.online_payment_order_id || '-')}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-
-          </Tabs>
-        </CardContent>
-      </Card>
 
       {/* 交易详情模态框 */}
       <TransactionDetailModal

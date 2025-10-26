@@ -408,7 +408,7 @@ export default function RechargeSuccessPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600 min-w-[20px]">5.</span>
-              <span>您可以在钱包页面的"充值记录"中查看订单状态</span>
+              <span>您可以在钱包页面的&ldquo;充值记录&rdquo;中查看订单状态</span>
             </li>
           </ol>
         </CardContent>

@@ -169,13 +169,13 @@ export default function AdminTeamsPage() {
       title: "总团队数",
       value: total.toString(),
       icon: Building2,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "总成员数",
       value: teams.reduce((sum, team) => sum + team.member_count, 0).toString(),
       icon: UsersIcon,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "平均成员",
@@ -183,7 +183,7 @@ export default function AdminTeamsPage() {
         ? (teams.reduce((sum, team) => sum + team.member_count, 0) / teams.length).toFixed(1)
         : "0",
       icon: User,
-      gradient: "purple",
+      gradient: "purple" as const,
     },
   ];
 
@@ -205,7 +205,7 @@ export default function AdminTeamsPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as 'blue' | 'green' | 'purple' | 'orange')}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

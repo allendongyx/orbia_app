@@ -180,25 +180,25 @@ export default function AdminKolsPage() {
       title: "总 KOL 数",
       value: total.toString(),
       icon: UsersIcon,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "已通过",
       value: kols.filter((k) => k.status === "approved").length.toString(),
       icon: CheckCircle2,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "待审核",
       value: kols.filter((k) => k.status === "pending").length.toString(),
       icon: Clock,
-      gradient: "yellow",
+      gradient: "orange" as const,
     },
     {
       title: "已拒绝",
       value: kols.filter((k) => k.status === "rejected").length.toString(),
       icon: XCircle,
-      gradient: "red",
+      gradient: "red" as const,
     },
   ];
 
@@ -220,7 +220,7 @@ export default function AdminKolsPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as 'blue' | 'green' | 'purple' | 'orange')}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

@@ -135,25 +135,25 @@ export default function AdminOrdersPage() {
       title: "总订单数",
       value: total.toString(),
       icon: FileText,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "已完成",
       value: orders.filter((o) => o.status === "completed").length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "进行中",
       value: orders.filter((o) => o.status === "in_progress").length.toString(),
       icon: PlayCircle,
-      gradient: "purple",
+      gradient: "purple" as const,
     },
     {
       title: "总金额",
       value: `$${orders.reduce((sum, order) => sum + order.plan_price, 0).toFixed(2)}`,
       icon: DollarSign,
-      gradient: "orange",
+      gradient: "orange" as const,
     },
   ];
 
@@ -175,7 +175,7 @@ export default function AdminOrdersPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as 'blue' | 'green' | 'purple' | 'orange')}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

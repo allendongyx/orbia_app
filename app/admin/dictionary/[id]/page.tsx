@@ -492,19 +492,19 @@ export default function DictionaryItemsPage() {
       title: "总项目数",
       value: items.length.toString(),
       icon: FileText,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "根节点",
       value: items.filter((i) => i.parent_id === 0).length.toString(),
       icon: Folder,
-      gradient: "yellow",
+      gradient: "orange" as const,
     },
     {
       title: "启用项",
       value: items.filter((i) => i.status === 1).length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
   ];
 
@@ -554,7 +554,7 @@ export default function DictionaryItemsPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as "blue" | "green" | "yellow" | "red" | "purple" | "orange" | "gray")}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>

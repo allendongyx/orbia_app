@@ -263,19 +263,19 @@ export default function PaymentSettingsPage() {
       title: "总钱包数",
       value: wallets.length.toString(),
       icon: Wallet,
-      gradient: "blue",
+      gradient: "blue" as const,
     },
     {
       title: "启用中",
       value: wallets.filter((w) => w.status === "active").length.toString(),
       icon: CheckCircle,
-      gradient: "green",
+      gradient: "green" as const,
     },
     {
       title: "已禁用",
       value: wallets.filter((w) => w.status === "inactive").length.toString(),
       icon: XCircle,
-      gradient: "gray",
+      gradient: "dark" as const,
     },
   ];
 
@@ -303,7 +303,7 @@ export default function PaymentSettingsPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
                 </CardTitle>
-                <div className={getIconContainer("small", stat.gradient as "blue" | "green" | "yellow" | "red" | "purple" | "orange" | "gray")}>
+                <div className={getIconContainer("small", stat.gradient)}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
