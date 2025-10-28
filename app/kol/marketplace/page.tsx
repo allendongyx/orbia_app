@@ -18,7 +18,9 @@ import {
   Info,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  MapPin,
+  Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +31,7 @@ import { getIconContainer, cardStyles } from "@/lib/design-system";
 import { getKolList, getKolInfo, KolInfo as ApiKolInfo } from "@/lib/api/kol";
 import { isSuccessResponse, BaseResp } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
+import { DictionaryText } from "@/components/common/dictionary-text";
 import data from "../data.json";
 
 interface KOL {
@@ -303,12 +306,12 @@ export default function Kols() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredKOLs.map((kol) => (
                 <Link key={kol.id} href={`/kol/marketplace/${kol.id}`}>
-                  <Card className="group border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer h-full">
+                  <Card className="group border border-gray-200 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all cursor-pointer h-full">
                     <CardContent className="p-6">
                       <div className="flex flex-col gap-4">
                         {/* KOL 头像和基本信息 */}
                         <div className="flex items-start gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-gray-200 ring-2 ring-transparent group-hover:ring-blue-500 transition-all">
+                          <Avatar className="h-16 w-16 border-2 border-gray-200 ring-2 ring-transparent group-hover:ring-blue-500 transition-all flex-shrink-0">
                             <AvatarImage
                               src={kol.avatar_url || `https://randomuser.me/api/portraits/men/${kol.id}.jpg`}
                               alt={kol.display_name}
@@ -318,32 +321,62 @@ export default function Kols() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                              {kol.display_name}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-600">
-                                {kol.stats?.total_followers ? `${(kol.stats.total_followers / 1000).toFixed(1)}K` : "N/A"} followers
-                              </span>
-                              {kol.stats?.engagement_rate && (
-                                <>
-                                  <span className="text-xs text-gray-400">•</span>
-                                  <div className="flex items-center gap-1">
-                                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                                    <span className="text-xs text-gray-600">{(kol.stats.engagement_rate * 100).toFixed(1)}%</span>
-                                  </div>
-                                </>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-base text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                                {kol.display_name}
+                              </h3>
+                              {kol.status === 'approved' && (
+                                <CheckCircle2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
                               )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Users className="h-3 w-3 text-gray-500" />
+                              <span className="text-xs text-gray-600">
+                                {kol.stats?.total_followers 
+                                  ? `${(kol.stats.total_followers / 1000000).toFixed(1)}M`
+                                  : "N/A"
+                                }
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         {/* 描述 */}
                         {kol.description && (
-                          <p className="text-sm text-gray-600 line-clamp-2">
+                          <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">
                             {kol.description}
                           </p>
                         )}
+
+                        {/* 国家和语言 */}
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {kol.country && (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-700">
+                              <MapPin className="h-3 w-3" />
+                              <DictionaryText 
+                                dictionaryCode="COUNTRY" 
+                                code={kol.country} 
+                                fallback={kol.country} 
+                              />
+                            </div>
+                          )}
+                          {kol.languages && kol.languages.length > 0 && (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-700">
+                              <Languages className="h-3 w-3" />
+                              {kol.languages.slice(0, 2).map((l, idx) => (
+                                <React.Fragment key={l.language_code}>
+                                  {idx > 0 && ", "}
+                                  <DictionaryText 
+                                    dictionaryCode="LANGUAGE" 
+                                    code={l.language_code} 
+                                    fallback={l.language_name} 
+                                  />
+                                </React.Fragment>
+                              ))}
+                              {kol.languages.length > 2 && ` +${kol.languages.length - 2}`}
+                            </div>
+                          )}
+                        </div>
 
                         {/* 标签 */}
                         {kol.tags && kol.tags.length > 0 && (
@@ -351,40 +384,27 @@ export default function Kols() {
                             {kol.tags.slice(0, 3).map((tag, idx) => (
                               <Badge
                                 key={idx}
-                                className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0"
+                                className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0 text-xs"
                               >
                                 {tag.tag}
                               </Badge>
                             ))}
                             {kol.tags.length > 3 && (
-                              <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-xs">
                                 +{kol.tags.length - 3}
                               </Badge>
                             )}
                           </div>
                         )}
 
-                        {/* 统计信息 */}
-                        <div className="border-t border-gray-100 pt-4 mt-auto">
-                          <div className="grid grid-cols-2 gap-4 mb-3">
-                            <div>
-                              <p className="text-xs text-gray-500">TikTok</p>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {kol.stats?.tiktok_followers ? `${(kol.stats.tiktok_followers / 1000).toFixed(1)}K` : "N/A"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Avg. Views</p>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {kol.stats?.tiktok_avg_views ? `${(kol.stats.tiktok_avg_views / 1000).toFixed(1)}K` : "N/A"}
-                              </p>
-                            </div>
+                        {/* 互动提示 */}
+                        <div className="border-t border-gray-100 pt-3 mt-auto">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500 group-hover:text-blue-600 transition-colors">
+                              点击查看详情
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                           </div>
-                          
-                          <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 rounded-xl">
-                            View Profile
-                            <ArrowUpRight className="ml-1 h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </CardContent>

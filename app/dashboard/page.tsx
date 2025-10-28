@@ -8,16 +8,15 @@ import {
   Megaphone, 
   DollarSign, 
   LineChart, 
-  TrendingUp, 
-  Users, 
-  Eye,
   ArrowUpRight,
-  ArrowDownRight,
   Sparkles,
   Target,
   Zap,
   Play,
-  Loader2
+  Loader2,
+  Flame,
+  CircleDot,
+  TrendingDown
 } from "lucide-react";
 import { getDashboardData, DashboardData } from "@/lib/api/dashboard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,7 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState<{url: string, title: string} | null>(null);
   const [showFullStats, setShowFullStats] = useState(false);
   const { toast } = useToast();
 
@@ -68,12 +66,40 @@ export default function Dashboard() {
     }).format(num);
   };
 
-  const getValueLevelColor = (level: string) => {
+  const getValueLevelStyle = (level: string) => {
     switch (level) {
-      case 'high': return 'bg-red-100 text-red-700';
-      case 'medium': return 'bg-yellow-100 text-yellow-700';
-      case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'high': 
+        return {
+          gradient: 'bg-gradient-to-r from-red-500 to-orange-500',
+          text: 'text-white',
+          icon: Flame,
+          shadow: 'shadow-sm shadow-red-200',
+          glow: 'ring-1 ring-red-300/50'
+        };
+      case 'medium': 
+        return {
+          gradient: 'bg-gradient-to-r from-yellow-400 to-orange-400',
+          text: 'text-white',
+          icon: CircleDot,
+          shadow: 'shadow-sm shadow-yellow-200',
+          glow: 'ring-1 ring-yellow-300/50'
+        };
+      case 'low': 
+        return {
+          gradient: 'bg-gradient-to-r from-green-500 to-emerald-500',
+          text: 'text-white',
+          icon: TrendingDown,
+          shadow: 'shadow-sm shadow-green-200',
+          glow: 'ring-1 ring-green-300/50'
+        };
+      default: 
+        return {
+          gradient: 'bg-gradient-to-r from-gray-400 to-gray-500',
+          text: 'text-white',
+          icon: CircleDot,
+          shadow: 'shadow-sm shadow-gray-200',
+          glow: 'ring-1 ring-gray-300/50'
+        };
     }
   };
 
@@ -193,12 +219,12 @@ export default function Dashboard() {
                     <h4 className="font-semibold text-gray-900 mb-1">优秀广告案例</h4>
                     <p className="text-sm text-gray-500">高转化率广告创意参考</p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {dashboardData?.excellent_cases.slice(0, 3).map((adCase) => (
+                  <div className="grid grid-cols-3 gap-2">
+                    {dashboardData?.excellent_cases.slice(0, 6).map((adCase) => (
                       <div 
                         key={adCase.id}
-                        className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform cursor-pointer shadow-sm relative group"
-                        onClick={() => setSelectedVideo({ url: adCase.video_url, title: adCase.title })}
+                        className="aspect-[9/16] rounded-lg overflow-hidden bg-gray-100 hover:scale-105 transition-transform cursor-pointer shadow-sm relative group"
+                        onClick={() => window.open(adCase.video_url, '_blank')}
                       >
                         <img 
                           src={adCase.cover_url} 
@@ -206,7 +232,7 @@ export default function Dashboard() {
                           className="w-full h-full object-cover" 
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="h-8 w-8 text-white" />
+                          <Play className="h-6 w-6 text-white" />
                         </div>
                       </div>
                     ))}
@@ -227,33 +253,38 @@ export default function Dashboard() {
                 </div>
 
                 {/* Trending Topics */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">内容趋势</h4>
-                    <p className="text-sm text-gray-500">由 Orbia 数据分析统计</p>
+                    <h4 className="font-semibold text-gray-900 mb-0.5">内容趋势</h4>
+                    <p className="text-xs text-gray-500">由 Orbia 数据分析统计</p>
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b">
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-4 gap-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-1.5 border-b">
                       <div>排名</div>
                       <div>热点词</div>
                       <div>价值</div>
                       <div className="text-right">热度</div>
                     </div>
-                    {dashboardData?.content_trends.slice(0, 5).map((trend) => (
-                      <div key={trend.id} className="grid grid-cols-4 gap-3 text-sm items-center py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-colors cursor-pointer">
-                        <div className="font-semibold text-gray-900">#{trend.ranking}</div>
-                        <div className="font-medium text-gray-900">{trend.hot_keyword}</div>
-                        <div>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getValueLevelColor(trend.value_level)}`}>
-                            {getValueLevelText(trend.value_level)}
-                          </span>
+                    {dashboardData?.content_trends.slice(0, 10).map((trend) => {
+                      const style = getValueLevelStyle(trend.value_level);
+                      const LevelIcon = style.icon;
+                      return (
+                        <div key={trend.id} className="grid grid-cols-4 gap-2 text-xs items-center py-1 hover:bg-gray-50 rounded px-1.5 -mx-1.5 transition-colors cursor-pointer">
+                          <div className="font-semibold text-gray-900 text-[11px]">#{trend.ranking}</div>
+                          <div className="font-medium text-gray-900 text-[11px] truncate">{trend.hot_keyword}</div>
+                          <div>
+                            <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${style.gradient} ${style.text} ${style.shadow} ${style.glow}`}>
+                              <LevelIcon className="h-2.5 w-2.5" />
+                              {getValueLevelText(trend.value_level)}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-gray-900 font-medium text-[11px]">{formatNumber(trend.heat)}</div>
+                            <div className="text-[10px] text-green-600">+{trend.growth_rate}%</div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-gray-900 font-medium">{formatNumber(trend.heat)}</div>
-                          <div className="text-xs text-green-600">+{trend.growth_rate}%</div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -337,27 +368,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-
-      {/* Video Player Dialog */}
-      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{selectedVideo?.title}</DialogTitle>
-          </DialogHeader>
-          {selectedVideo && (
-            <div className="aspect-video w-full">
-              <video 
-                src={selectedVideo.url} 
-                controls 
-                autoPlay
-                className="w-full h-full rounded-lg"
-              >
-                您的浏览器不支持视频播放
-              </video>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Full Stats Dialog */}
       <Dialog open={showFullStats} onOpenChange={setShowFullStats}>

@@ -1,55 +1,35 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, ChevronRight, Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { getDictionaryTree, DictionaryItemInfo } from "@/lib/api/dictionary";
-import { isSuccessResponse } from "@/lib/api-client";
+import { DictionaryItemInfo } from "@/lib/api/dictionary";
+import { useDictionaryTree } from "@/hooks/use-dictionary";
 
 interface LocationSelectorDictProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
+  multiple?: boolean; // 是否支持多选，默认 true
 }
 
 export default function LocationSelectorDict({
   value = [],
   onChange,
-  placeholder = "搜索或选择地域"
+  placeholder = "搜索或选择地域",
+  multiple = true,
 }: LocationSelectorDictProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [countries, setCountries] = useState<DictionaryItemInfo[]>([]);
-  const [loading, setLoading] = useState(false);
 
   // 确保 value 始终是数组
   const valueArray = Array.isArray(value) ? value : [];
 
-  // 加载字典数据
-  useEffect(() => {
-    loadCountries();
-  }, []);
-
-  const loadCountries = async () => {
-    setLoading(true);
-    try {
-      const result = await getDictionaryTree({
-        dictionary_code: "COUNTRY",
-        only_enabled: 1,
-      });
-      
-      if (isSuccessResponse(result.base_resp)) {
-        setCountries(result.tree || []);
-      }
-    } catch (err) {
-      console.error("Failed to load countries:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 使用缓存加载字典数据
+  const { tree: countries, loading } = useDictionaryTree("COUNTRY");
 
   // 过滤国家和地区
   const filteredCountries = useMemo(() => {
@@ -105,6 +85,20 @@ export default function LocationSelectorDict({
   };
 
   const handleSelect = (code: string, isCountry: boolean = false) => {
+    if (!multiple) {
+      // 单选模式：直接设置为选中的项
+      const isSelected = valueArray.includes(code);
+      if (isSelected) {
+        // 如果已经选中，则取消选中
+        onChange?.([]);
+      } else {
+        // 否则选中新项（替换之前的选中）
+        onChange?.([code]);
+      }
+      return;
+    }
+
+    // 多选模式：原有逻辑
     const newValue = [...valueArray];
     const index = newValue.indexOf(code);
 
@@ -227,7 +221,7 @@ export default function LocationSelectorDict({
 
       {/* 下拉面板 */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-[400px] flex flex-col">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[400px] flex flex-col">
           {/* 搜索框 */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
@@ -273,11 +267,13 @@ export default function LocationSelectorDict({
                             handleSelect(country.code, true);
                           }}
                         >
-                          <Checkbox
-                            checked={isSelected}
-                            className={isPartial && !isSelected ? "data-[state=unchecked]:bg-gray-300" : ""}
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                          {multiple && (
+                            <Checkbox
+                              checked={isSelected}
+                              className={isPartial && !isSelected ? "data-[state=unchecked]:bg-gray-300" : ""}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          )}
                           {country.icon_url && <span className="text-base">{country.icon_url}</span>}
                           <span className="text-sm font-medium flex-1">{country.name}</span>
                           
@@ -321,11 +317,13 @@ export default function LocationSelectorDict({
                                     }
                                   }}
                                 >
-                                  <Checkbox
-                                    checked={isRegionSel || isCountrySel}
-                                    disabled={isDisabled}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
+                                  {multiple && (
+                                    <Checkbox
+                                      checked={isRegionSel || isCountrySel}
+                                      disabled={isDisabled}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  )}
                                   <span className="text-sm flex-1">{region.name}</span>
                                 </div>
                               );
@@ -363,7 +361,7 @@ export default function LocationSelectorDict({
       {/* 点击外部关闭 */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[9998]"
           onClick={() => setIsOpen(false)}
         />
       )}

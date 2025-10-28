@@ -23,25 +23,56 @@ import {
   MapPin,
   Calendar,
   Languages,
+  Edit2,
+  Plus,
+  Trash2,
+  Video,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { getIconContainer, cardStyles } from "@/lib/design-system";
-import { getKolInfo, getKolVideos, getKolPlans, KolInfo, KolVideo, KolPlan } from "@/lib/api/kol";
+import { 
+  getKolInfo, 
+  getKolVideos, 
+  getKolPlans, 
+  KolInfo, 
+  KolVideo, 
+  KolPlan,
+  createKolVideo,
+  updateKolVideo,
+  deleteKolVideo,
+  saveKolPlan,
+  deleteKolPlan,
+  CreateKolVideoReq,
+  UpdateKolVideoReq,
+  SaveKolPlanReq,
+} from "@/lib/api/kol";
 import { isSuccessResponse } from "@/lib/api-client";
 import { TikTokEmbed } from "@/components/kol/tiktok-embed";
 import { VideoPlayerModal } from "@/components/kol/video-player-modal";
-import { Video } from "lucide-react";
+import { EditProfileModal } from "@/components/kol/edit-profile-modal";
+import { useAuth } from "@/contexts/auth-context";
+import { toast } from "@/hooks/use-toast";
 import kolData from "../../data.json";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Loader2, Save } from "lucide-react";
+import { CoverUploadDialog } from "@/components/kol/cover-upload-dialog";
+import { TikTokVideoPreview } from "@/components/kol/tiktok-embed";
+import { getDictionaryTree, DictionaryItemInfo } from "@/lib/api/dictionary";
+import { DictionaryText } from "@/components/common/dictionary-text";
 
 export default function KOLDetail() {
   const params = useParams();
   const router = useRouter();
   const kolId = params.id as string;
+  const { user, isLoggedIn } = useAuth();
 
   const [kolInfo, setKolInfo] = useState<KolInfo | null>(null);
   const [kolVideos, setKolVideos] = useState<KolVideo[]>([]);
@@ -53,6 +84,16 @@ export default function KOLDetail() {
   const [playingVideo, setPlayingVideo] = useState<KolVideo | null>(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  // 编辑功能相关状态
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [editingVideo, setEditingVideo] = useState<KolVideo | null>(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<KolPlan | null>(null);
+
+  // 判断是否是本人访问
+  const isOwner = isLoggedIn && user?.kol_info?.id === kolInfo?.id;
 
   useEffect(() => {
     if (kolId) {
@@ -108,6 +149,44 @@ export default function KOLDetail() {
     }
   };
 
+  const handleDeleteVideo = async (video: KolVideo) => {
+    if (!confirm("确定要删除这个视频吗？")) return;
+    
+    try {
+      await deleteKolVideo({ video_id: video.id });
+      toast({
+        title: "删除成功",
+        description: "视频已删除",
+      });
+      loadKolVideos();
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "删除失败",
+        description: "请重试",
+      });
+    }
+  };
+
+  const handleDeletePlan = async (plan: KolPlan) => {
+    if (!confirm("确定要删除这个定价方案吗？")) return;
+    
+    try {
+      await deleteKolPlan({ plan_id: plan.id });
+      toast({
+        title: "删除成功",
+        description: "定价方案已删除",
+      });
+      loadKolPlans();
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "删除失败",
+        description: "请重试",
+      });
+    }
+  };
+
   // 查找对应的 KOL (fallback)
   const kol = kolData.find((k) => k.id === kolId);
 
@@ -158,72 +237,6 @@ export default function KOLDetail() {
     return null;
   }
 
-  // 模拟的额外数据
-  const extraData = {
-    bio: "Leading voice in blockchain and Web3 technology. Passionate about decentralization and cryptocurrency education.",
-    languages: ["English", "Mandarin"],
-    location: "Singapore",
-    joined: "Jan 2020",
-    engagement_rate: "4.8%",
-    avg_views: "850K",
-    total_videos: 234,
-    verified: true,
-    specialties: [
-      { name: "DeFi Protocols", level: "Expert" },
-      { name: "NFT Strategy", level: "Advanced" },
-      { name: "Web3 Gaming", level: "Expert" },
-      { name: "Token Economics", level: "Advanced" },
-    ],
-    recentWorks: [
-      {
-        id: "1",
-        title: "Understanding DeFi Yield Farming",
-        cover: kol?.masterpiece_works?.[0]?.cover || "",
-        views: "1.2M",
-        likes: "45K",
-        comments: "2.3K",
-        date: "2 days ago",
-      },
-      {
-        id: "2",
-        title: "NFT Market Analysis 2024",
-        cover: kol?.masterpiece_works?.[1]?.cover || kol?.masterpiece_works?.[0]?.cover || "",
-        views: "980K",
-        likes: "38K",
-        comments: "1.9K",
-        date: "5 days ago",
-      },
-      {
-        id: "3",
-        title: "Top 10 GameFi Projects",
-        cover: kol?.masterpiece_works?.[0]?.cover || "",
-        views: "760K",
-        likes: "29K",
-        comments: "1.5K",
-        date: "1 week ago",
-      },
-      {
-        id: "4",
-        title: "Blockchain Security Tips",
-        cover: kol?.masterpiece_works?.[1]?.cover || kol?.masterpiece_works?.[0]?.cover || "",
-        views: "650K",
-        likes: "25K",
-        comments: "1.2K",
-        date: "2 weeks ago",
-      },
-    ],
-    platformStats: [
-      { platform: "TikTok", followers: "2.8M", engagement: "5.2%" },
-      { platform: "YouTube", followers: "1.2M", engagement: "4.1%" },
-      { platform: "Twitter", followers: "890K", engagement: "3.8%" },
-    ],
-    pricingPlans: [
-      { duration: "15-20s", price: "$" + (parseInt((kol?.offer_price || "0").replace(/[^0-9]/g, "")) * 0.7) + "k", description: "Short-form content" },
-      { duration: "21-60s", price: kol?.offer_price || "$0k", description: "Standard content", popular: true },
-      { duration: "60s+", price: "$" + (parseInt((kol?.offer_price || "0").replace(/[^0-9]/g, "")) * 1.5) + "k", description: "Long-form content" },
-    ],
-  };
-
   const stats = [
     {
       title: "Total Followers",
@@ -256,24 +269,6 @@ export default function KOLDetail() {
       gradient: "from-green-500 to-green-600",
       bgGradient: "from-green-50 to-green-100",
       change: "+10.8%",
-    },
-  ];
-
-  const platformStats = [
-    { 
-      platform: "TikTok", 
-      followers: displayData.stats ? `${(displayData.stats.tiktok_followers / 1000000).toFixed(1)}M` : "N/A",
-      engagement: displayData.stats ? `${(displayData.stats.engagement_rate * 100).toFixed(1)}%` : "N/A",
-    },
-    { 
-      platform: "YouTube", 
-      followers: displayData.stats ? `${(displayData.stats.youtube_subscribers / 1000000).toFixed(1)}M` : "N/A",
-      engagement: "4.1%",
-    },
-    { 
-      platform: "X (Twitter)", 
-      followers: displayData.stats ? `${(displayData.stats.x_followers / 1000).toFixed(0)}K` : "N/A",
-      engagement: "3.8%",
     },
   ];
 
@@ -311,7 +306,7 @@ export default function KOLDetail() {
                     </div>
                   )}
                 </div>
-                <p className="text-gray-600 mb-3 text-base">{displayData.description || extraData.bio}</p>
+                <p className="text-gray-600 mb-3 text-base">{displayData.description}</p>
                 
                 <div className="flex flex-wrap gap-2 mb-3">
                   {displayData.tags.map((tag, idx) => (
@@ -328,7 +323,11 @@ export default function KOLDetail() {
                   {displayData.country && (
                     <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/60 backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5" />
-                      {displayData.country}
+                      <DictionaryText 
+                        dictionaryCode="COUNTRY" 
+                        code={displayData.country} 
+                        fallback={displayData.country} 
+                      />
                     </span>
                   )}
                   {displayData.created_at && (
@@ -340,7 +339,16 @@ export default function KOLDetail() {
                   {displayData.languages.length > 0 && (
                     <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/60 backdrop-blur-sm">
                       <Languages className="h-3.5 w-3.5" />
-                      {displayData.languages.map(l => l.language_name).join(", ")}
+                      {displayData.languages.map((l, idx) => (
+                        <React.Fragment key={l.language_code}>
+                          {idx > 0 && ", "}
+                          <DictionaryText 
+                            dictionaryCode="LANGUAGE" 
+                            code={l.language_code} 
+                            fallback={l.language_name} 
+                          />
+                        </React.Fragment>
+                      ))}
                     </span>
                   )}
                 </div>
@@ -385,27 +393,41 @@ export default function KOLDetail() {
 
             {/* 右侧：操作按钮 */}
             <div className="flex flex-col gap-2 lg:ml-auto">
-              <Button 
-                onClick={() => setShowPricingModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all h-11 px-6"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                下单
-              </Button>
-              <div className="flex gap-2">
+              {isOwner ? (
+                // 如果是本人，显示编辑按钮
                 <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className={`rounded-xl bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-white h-11 w-11 transition-all ${isFavorite ? 'text-yellow-500 border-yellow-300' : ''}`}
+                  onClick={() => setShowEditProfileModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all h-11 px-6"
                 >
-                  <Star className={`h-4 w-4 ${isFavorite ? 'fill-yellow-500' : ''}`} />
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  编辑资料
                 </Button>
-                <Button variant="outline" className="rounded-xl bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-white h-11 px-4 flex-1">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  分享
+              ) : (
+                // 如果不是本人，显示下单按钮
+                <Button 
+                  onClick={() => setShowPricingModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all h-11 px-6"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  下单
                 </Button>
-              </div>
+              )}
+              {!isOwner && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setIsFavorite(!isFavorite)}
+                    className={`rounded-xl bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-white h-11 w-11 transition-all ${isFavorite ? 'text-yellow-500 border-yellow-300' : ''}`}
+                  >
+                    <Star className={`h-4 w-4 ${isFavorite ? 'fill-yellow-500' : ''}`} />
+                  </Button>
+                  <Button variant="outline" className="rounded-xl bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-white h-11 px-4 flex-1">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    分享
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -440,16 +462,28 @@ export default function KOLDetail() {
 
       {/* 主要内容区 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 左侧：作品和详情 */}
+        {/* 左侧：视频作品 */}
         <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="works" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-xl">
-              <TabsTrigger value="works" className="rounded-lg">Recent Works</TabsTrigger>
-              <TabsTrigger value="stats" className="rounded-lg">Platform Stats</TabsTrigger>
-              <TabsTrigger value="specialties" className="rounded-lg">Specialties</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="works" className="mt-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>最近发布的视频</CardTitle>
+                {isOwner && (
+                  <Button
+                    onClick={() => {
+                      setEditingVideo(null);
+                      setShowVideoModal(true);
+                    }}
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-600 to-blue-700"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    添加视频
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
               {loadingVideos ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center">
@@ -463,81 +497,130 @@ export default function KOLDetail() {
                     <KolVideoCard 
                       key={video.id} 
                       video={video}
+                      isOwner={isOwner}
                       onClick={() => {
                         setPlayingVideo(video);
                         setShowVideoPlayerModal(true);
                       }}
+                      onEdit={() => {
+                        setEditingVideo(video);
+                        setShowVideoModal(true);
+                      }}
+                      onDelete={() => handleDeleteVideo(video)}
                     />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Play className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无视频</h3>
-                  <p className="text-gray-600">该KOL还没有上传视频作品</p>
+                  <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {isOwner ? "还没有视频" : "暂无视频"}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {isOwner ? "开始添加您的视频作品吧" : "该KOL还没有上传视频作品"}
+                  </p>
+                  {isOwner && (
+                    <Button
+                      onClick={() => {
+                        setEditingVideo(null);
+                        setShowVideoModal(true);
+                      }}
+                      variant="outline"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      添加第一个视频
+                    </Button>
+                  )}
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="stats" className="mt-6">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {platformStats.map((platform, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{platform.platform}</h4>
-                          <p className="text-sm text-gray-600">{platform.followers} followers</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-600">{platform.engagement}</p>
-                          <p className="text-xs text-gray-500">Engagement</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="specialties" className="mt-6">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {extraData.specialties.map((specialty, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={getIconContainer("small", "purple")}>
-                            <Target className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{specialty.name}</h4>
-                            <p className="text-sm text-gray-600">{specialty.level}</p>
-                          </div>
-                        </div>
-                        <Award className="h-5 w-5 text-yellow-500" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* 右侧：Need Help */}
-        <div className="space-y-6">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-2">需要帮助？</h3>
-              <p className="text-sm text-gray-300 mb-4">
-                联系我们的团队获取个性化的营销策略方案
-              </p>
-              <Button variant="outline" className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-xl">
-                联系客服
-              </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* 右侧：报价和帮助 */}
+        <div className="space-y-6">
+          {/* 报价卡片 */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>报价方案</CardTitle>
+                {isOwner && (
+                  <Button
+                    onClick={() => {
+                      setEditingPlan(null);
+                      setShowPlanModal(true);
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingPlans ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : kolPlans.length > 0 ? (
+                <div className="space-y-3">
+                  {kolPlans.map((plan) => (
+                    <PricingPlanCard
+                      key={plan.id}
+                      plan={plan}
+                      isOwner={isOwner}
+                      onEdit={() => {
+                        setEditingPlan(plan);
+                        setShowPlanModal(true);
+                      }}
+                      onDelete={() => handleDeletePlan(plan)}
+                      onClick={() => {
+                        if (!isOwner) {
+                          router.push(`/kol/orders/create?kol_id=${kolId}&plan_id=${plan.id}`);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <DollarSign className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm text-gray-600 mb-3">
+                    {isOwner ? "还没有报价方案" : "暂无报价"}
+                  </p>
+                  {isOwner && (
+                    <Button
+                      onClick={() => {
+                        setEditingPlan(null);
+                        setShowPlanModal(true);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="mr-2 h-3 w-3" />
+                      添加报价
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 帮助卡片 */}
+          {!isOwner && (
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-2">需要帮助？</h3>
+                <p className="text-sm text-gray-300 mb-4">
+                  联系我们的团队获取个性化的营销策略方案
+                </p>
+                <Button variant="outline" className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-xl">
+                  联系客服
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -549,74 +632,141 @@ export default function KOLDetail() {
         createdAt={playingVideo?.created_at}
       />
 
-      {/* 报价选择 Modal */}
-      <Dialog open={showPricingModal} onOpenChange={setShowPricingModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">选择报价方案</DialogTitle>
-            <DialogDescription>
-              请选择一个适合您需求的报价方案，然后填写订单详情
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            {loadingPlans ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-                  <p className="text-gray-600 text-sm">加载报价中...</p>
+      {/* 报价选择 Modal（非本人访问时） */}
+      {!isOwner && (
+        <Dialog open={showPricingModal} onOpenChange={setShowPricingModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">选择报价方案</DialogTitle>
+              <DialogDescription>
+                请选择一个适合您需求的报价方案，然后填写订单详情
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              {loadingPlans ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                    <p className="text-gray-600 text-sm">加载报价中...</p>
+                  </div>
                 </div>
-              </div>
-            ) : kolPlans.length > 0 ? (
-              kolPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  onClick={() => {
-                    // 跳转到下单页面，并传递选择的报价
-                    router.push(`/kol/orders/create?kol_id=${kolId}&plan_id=${plan.id}`);
-                  }}
-                  className={`group relative p-5 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg ${
-                    plan.plan_type === 'standard'
-                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50"
-                      : "border-gray-200 hover:border-blue-300 bg-white"
-                  }`}
-                >
-                  {plan.plan_type === 'standard' && (
-                    <div className="absolute -top-3 left-4">
-                      <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-md">
-                        🔥 最受欢迎
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">{plan.title}</h3>
-                      <p className="text-sm text-gray-600">{plan.description}</p>
-                    </div>
-                    <div className="text-right ml-4">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
+              ) : kolPlans.length > 0 ? (
+                kolPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    onClick={() => {
+                      router.push(`/kol/orders/create?kol_id=${kolId}&plan_id=${plan.id}`);
+                    }}
+                    className={`group relative p-5 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg ${
+                      plan.plan_type === 'standard'
+                        ? "border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50"
+                        : "border-gray-200 hover:border-blue-300 bg-white"
+                    }`}
+                  >
+                    {plan.plan_type === 'standard' && (
+                      <div className="absolute -top-3 left-4">
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-md">
+                          🔥 最受欢迎
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">{plan.title}</h3>
+                        <p className="text-sm text-gray-600">{plan.description}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
+                        </div>
                       </div>
                     </div>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <span className="text-sm text-gray-500">点击选择此方案</span>
+                      <ArrowUpRight className="h-5 w-5 text-blue-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <span className="text-sm text-gray-500">点击选择此方案</span>
-                    <ArrowUpRight className="h-5 w-5 text-blue-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无报价方案</h3>
+                  <p className="text-gray-600">该 KOL 还没有设置报价方案</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无报价方案</h3>
-                <p className="text-gray-600">该 KOL 还没有设置报价方案</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* 编辑资料 Modal */}
+      {isOwner && kolInfo && (
+        <EditProfileModal
+          open={showEditProfileModal}
+          onOpenChange={setShowEditProfileModal}
+          kolInfo={kolInfo}
+          onSuccess={loadKolData}
+        />
+      )}
+
+      {/* 视频编辑 Modal */}
+      {isOwner && (
+        <VideoModal
+          open={showVideoModal}
+          onOpenChange={setShowVideoModal}
+          video={editingVideo}
+          onSave={async (videoData) => {
+            try {
+              if ('video_id' in videoData) {
+                await updateKolVideo(videoData);
+              } else {
+                await createKolVideo(videoData);
+              }
+              toast({
+                title: "保存成功",
+                description: "视频已保存",
+              });
+              setShowVideoModal(false);
+              loadKolVideos();
+            } catch (err) {
+              toast({
+                variant: "error",
+                title: "保存失败",
+                description: "请重试",
+              });
+            }
+          }}
+        />
+      )}
+
+      {/* 报价编辑 Modal */}
+      {isOwner && (
+        <PlanModal
+          open={showPlanModal}
+          onOpenChange={setShowPlanModal}
+          plan={editingPlan}
+          onSave={async (planData) => {
+            try {
+              await saveKolPlan(planData);
+              toast({
+                title: "保存成功",
+                description: "定价方案已保存",
+              });
+              setShowPlanModal(false);
+              loadKolPlans();
+            } catch (err) {
+              toast({
+                variant: "error",
+                title: "保存失败",
+                description: "请重试",
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -624,18 +774,24 @@ export default function KOLDetail() {
 // KOL Video Card Component
 function KolVideoCard({ 
   video, 
-  onClick 
+  isOwner,
+  onClick,
+  onEdit,
+  onDelete,
 }: { 
   video: KolVideo;
+  isOwner: boolean;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   return (
-    <div 
-      className="relative group cursor-pointer"
-      onClick={onClick}
-    >
+    <div className="relative group">
       {/* 封面图片容器 */}
-      <div className="relative w-full aspect-[9/16] bg-gray-100 rounded-lg overflow-hidden">
+      <div 
+        className="relative w-full aspect-[9/16] bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+        onClick={onClick}
+      >
         {video.cover_url ? (
           <>
             <img
@@ -658,21 +814,438 @@ function KolVideoCard({
         )}
       </div>
       
-      {/* 悬浮信息条 - 只在 hover 时显示 */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded-b-lg">
-        <div className="flex items-center justify-between text-white">
-          <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
-            TikTok
-          </Badge>
-          <span className="text-xs">
-            {new Date(video.created_at).toLocaleDateString('zh-CN', { 
-              month: 'short', 
-              day: 'numeric' 
-            })}
-          </span>
+      {/* 操作按钮 - 只有本人可见 */}
+      {isOwner && onEdit && onDelete && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="bg-white/90 hover:bg-white h-7 w-7 p-0"
+          >
+            <Edit2 className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="bg-red-500/90 hover:bg-red-600 text-white h-7 w-7 p-0"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
+// Pricing Plan Card Component
+function PricingPlanCard({
+  plan,
+  isOwner,
+  onEdit,
+  onDelete,
+  onClick,
+}: {
+  plan: KolPlan;
+  isOwner: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={`group relative p-4 rounded-lg border transition-all ${
+        isOwner ? 'border-gray-200' : 'border-gray-200 hover:border-blue-300 cursor-pointer hover:shadow-md'
+      }`}
+      onClick={!isOwner ? onClick : undefined}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-semibold text-gray-900">{plan.title}</h4>
+            <Badge variant="secondary" className="text-xs">
+              <DictionaryText dictionaryCode="KOL_PLAN_TYPE" code={plan.plan_type} fallback={plan.plan_type} />
+            </Badge>
+          </div>
+          <p className="text-sm text-gray-600">{plan.description}</p>
+        </div>
+        {isOwner && onEdit && onDelete && (
+          <div className="flex gap-1 ml-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="h-7 w-7 p-0"
+            >
+              <Edit2 className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+      <p className="text-2xl font-bold text-blue-600">${plan.price}</p>
+      {!isOwner && (
+        <div className="flex items-center justify-end mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-xs text-blue-600">选择 →</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Video Modal Component (从 profile 页面复制)
+function VideoModal({
+  open,
+  onOpenChange,
+  video,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  video: KolVideo | null;
+  onSave: (data: CreateKolVideoReq | UpdateKolVideoReq) => Promise<void>;
+}) {
+  const [embedCode, setEmbedCode] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+  const [showCoverSelector, setShowCoverSelector] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (video) {
+      setEmbedCode(video.embed_code);
+      setCoverUrl(video.cover_url || "");
+    } else {
+      setEmbedCode("");
+      setCoverUrl("");
+    }
+  }, [video, open]);
+
+  const handleSave = async () => {
+    if (!embedCode.trim()) {
+      toast({
+        variant: "error",
+        title: "信息不完整",
+        description: "请输入TikTok视频的嵌入代码",
+      });
+      return;
+    }
+
+    if (!coverUrl.trim()) {
+      toast({
+        variant: "error",
+        title: "信息不完整",
+        description: "请上传视频封面图片",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (video) {
+        await onSave({ video_id: video.id, embed_code: embedCode, cover_url: coverUrl });
+      } else {
+        await onSave({ embed_code: embedCode, cover_url: coverUrl });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{video ? "编辑视频" : "添加视频"}</DialogTitle>
+          <DialogDescription>
+            粘贴TikTok视频的嵌入代码来添加到您的作品集
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
+          {/* 视频封面 */}
+          <div>
+            <Label>视频封面 *</Label>
+            <div className="mt-2">
+              {coverUrl ? (
+                <div className="relative inline-block">
+                  <img
+                    src={coverUrl}
+                    alt="视频封面"
+                    className="w-48 h-48 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowCoverSelector(true)}
+                    className="mt-2"
+                  >
+                    更换封面
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCoverSelector(true)}
+                  className="w-48 h-48 border-2 border-dashed border-gray-300 hover:border-blue-500 flex flex-col items-center justify-center gap-2"
+                >
+                  <Plus className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-600">上传视频封面</span>
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              建议尺寸: 9:16 竖版图片，用于列表展示
+            </p>
+          </div>
+
+          {/* TikTok 嵌入代码 */}
+          <div>
+            <Label htmlFor="embed_code">TikTok 嵌入代码 *</Label>
+            <Textarea
+              id="embed_code"
+              value={embedCode}
+              onChange={(e) => setEmbedCode(e.target.value)}
+              placeholder='粘贴完整的TikTok嵌入代码...'
+              rows={8}
+              className="mt-1.5 font-mono text-xs"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              💡 如何获取嵌入代码：打开TikTok视频页面 → 点击分享 → 选择&ldquo;嵌入&rdquo; → 复制完整代码
+            </p>
+          </div>
+
+          {/* 预览 */}
+          {embedCode && (
+            <div className="border-t pt-4">
+              <Label className="mb-2 block">视频预览</Label>
+              <TikTokVideoPreview embedCode={embedCode} />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex-shrink-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            取消
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gradient-to-r from-blue-600 to-blue-700"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                保存视频
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+
+      {/* 封面上传对话框 */}
+      <CoverUploadDialog
+        open={showCoverSelector}
+        onOpenChange={setShowCoverSelector}
+        onConfirm={(url: string) => {
+          setCoverUrl(url);
+          setShowCoverSelector(false);
+        }}
+      />
+    </Dialog>
+  );
+}
+
+// Plan Modal Component (从 profile 页面复制)
+function PlanModal({
+  open,
+  onOpenChange,
+  plan,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  plan: KolPlan | null;
+  onSave: (data: SaveKolPlanReq) => Promise<void>;
+}) {
+  const [formData, setFormData] = useState<SaveKolPlanReq>({
+    title: "",
+    description: "",
+    price: 0,
+    plan_type: "standard",
+  });
+  const [saving, setSaving] = useState(false);
+  const [planTypes, setPlanTypes] = useState<DictionaryItemInfo[]>([]);
+
+  // 加载报价类型字典
+  useEffect(() => {
+    if (open) {
+      getDictionaryTree({ dictionary_code: 'KOL_PLAN_TYPE', only_enabled: 1 })
+        .then((result) => {
+          if (isSuccessResponse(result.base_resp) && result.tree) {
+            setPlanTypes(result.tree);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load plan types:', error);
+        });
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (plan) {
+      setFormData({
+        id: plan.id,
+        title: plan.title,
+        description: plan.description,
+        price: plan.price,
+        plan_type: plan.plan_type,
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        price: 0,
+        plan_type: "standard",
+      });
+    }
+  }, [plan, open]);
+
+  const handleSave = async () => {
+    if (!formData.title || !formData.description || formData.price <= 0) {
+      toast({
+        variant: "error",
+        title: "信息不完整",
+        description: "请填写所有必填字段，价格必须大于0",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{plan ? "编辑报价" : "添加报价"}</DialogTitle>
+          <DialogDescription>
+            为您的服务创建定价方案
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
+          <div>
+            <Label>方案类型 *</Label>
+            <select
+              value={formData.plan_type}
+              onChange={(e) => setFormData(prev => ({ ...prev, plan_type: e.target.value as 'basic' | 'standard' | 'premium' }))}
+              className="w-full mt-1.5 px-3 py-2 border border-gray-300 rounded-md"
+            >
+              {planTypes.length > 0 ? (
+                planTypes.map((type) => (
+                  <option key={type.code} value={type.code}>
+                    {type.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="basic">Basic</option>
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          <div>
+            <Label>标题 *</Label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="例如：30-60秒视频"
+              className="mt-1.5"
+            />
+          </div>
+
+          <div>
+            <Label>描述 *</Label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="描述此方案包含的内容"
+              rows={3}
+              className="mt-1.5"
+            />
+          </div>
+
+          <div>
+            <Label>价格 (USD) *</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+              className="mt-1.5"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="flex-shrink-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            取消
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gradient-to-r from-blue-600 to-blue-700"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                保存
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

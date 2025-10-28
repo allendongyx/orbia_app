@@ -1,5 +1,56 @@
 import apiClient from '../api-client';
 
+// API 响应类型
+interface DashboardDataResponse {
+  excellent_cases?: ExcellentCase[];
+  content_trends?: ContentTrend[];
+  platform_stats?: PlatformStats;
+}
+
+interface CreateCaseResponse {
+  id?: number;
+  case_id?: number;
+}
+
+interface CaseListResponse {
+  cases?: ExcellentCase[];
+  page_info?: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+interface CaseDetailResponse {
+  case_detail?: ExcellentCase;
+  case?: ExcellentCase;
+}
+
+interface CreateTrendResponse {
+  id?: number;
+  trend_id?: number;
+}
+
+interface TrendListResponse {
+  trends?: ContentTrend[];
+  page_info?: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+interface TrendDetailResponse {
+  trend_detail?: ContentTrend;
+  trend?: ContentTrend;
+}
+
+interface StatsResponse {
+  stats: PlatformStats;
+}
+
 // Dashboard 数据类型定义
 export interface ExcellentCase {
   id: number;
@@ -46,8 +97,23 @@ export interface DashboardData {
 
 // Dashboard 展示接口（无需认证）
 export async function getDashboardData(): Promise<DashboardData> {
-  const response = await apiClient.post('/api/v1/dashboard/data', {});
-  return response.data;
+  const response = await apiClient.post<DashboardDataResponse>('/api/v1/dashboard/data', {});
+  return {
+    excellent_cases: response.excellent_cases || [],
+    content_trends: response.content_trends || [],
+    platform_stats: response.platform_stats || {
+      id: 0,
+      active_kols: 0,
+      total_coverage: 0,
+      total_ad_impressions: 0,
+      total_transaction_amount: 0,
+      average_roi: 0,
+      average_cpm: 0,
+      web3_brand_count: 0,
+      created_at: '',
+      updated_at: ''
+    }
+  };
 }
 
 // ==================== 优秀广告案例管理 ====================
@@ -81,8 +147,8 @@ export interface ExcellentCaseListResponse {
 }
 
 export async function createExcellentCase(data: CreateExcellentCaseRequest): Promise<{ id: number }> {
-  const response = await apiClient.post('/api/v1/admin/dashboard/excellent-case/create', data);
-  return response.data;
+  const response = await apiClient.post<CreateCaseResponse>('/api/v1/admin/dashboard/excellent-case/create', data);
+  return { id: response.id || response.case_id || 0 };
 }
 
 export async function updateExcellentCase(data: UpdateExcellentCaseRequest): Promise<void> {
@@ -98,13 +164,16 @@ export async function getExcellentCaseList(params: {
   page?: number;
   page_size?: number;
 }): Promise<ExcellentCaseListResponse> {
-  const response = await apiClient.post('/api/v1/admin/dashboard/excellent-case/list', params);
-  return response.data;
+  const response = await apiClient.post<CaseListResponse>('/api/v1/admin/dashboard/excellent-case/list', params);
+  return {
+    cases: response.cases || [],
+    page_info: response.page_info || { page: 1, page_size: 10, total: 0, total_pages: 0 }
+  };
 }
 
 export async function getExcellentCaseDetail(id: number): Promise<ExcellentCase> {
-  const response = await apiClient.post(`/api/v1/admin/dashboard/excellent-case/${id}`, {});
-  return response.data.case_detail;
+  const response = await apiClient.post<CaseDetailResponse>(`/api/v1/admin/dashboard/excellent-case/${id}`, {});
+  return (response.case_detail || response.case) as ExcellentCase;
 }
 
 // ==================== 内容趋势管理 ====================
@@ -138,8 +207,8 @@ export interface ContentTrendListResponse {
 }
 
 export async function createContentTrend(data: CreateContentTrendRequest): Promise<{ id: number }> {
-  const response = await apiClient.post('/api/v1/admin/dashboard/content-trend/create', data);
-  return response.data;
+  const response = await apiClient.post<CreateTrendResponse>('/api/v1/admin/dashboard/content-trend/create', data);
+  return { id: response.id || response.trend_id || 0 };
 }
 
 export async function updateContentTrend(data: UpdateContentTrendRequest): Promise<void> {
@@ -155,13 +224,16 @@ export async function getContentTrendList(params: {
   page?: number;
   page_size?: number;
 }): Promise<ContentTrendListResponse> {
-  const response = await apiClient.post('/api/v1/admin/dashboard/content-trend/list', params);
-  return response.data;
+  const response = await apiClient.post<TrendListResponse>('/api/v1/admin/dashboard/content-trend/list', params);
+  return {
+    trends: response.trends || [],
+    page_info: response.page_info || { page: 1, page_size: 10, total: 0, total_pages: 0 }
+  };
 }
 
 export async function getContentTrendDetail(id: number): Promise<ContentTrend> {
-  const response = await apiClient.post(`/api/v1/admin/dashboard/content-trend/${id}`, {});
-  return response.data.trend_detail;
+  const response = await apiClient.post<TrendDetailResponse>(`/api/v1/admin/dashboard/content-trend/${id}`, {});
+  return (response.trend_detail || response.trend) as ContentTrend;
 }
 
 // ==================== 平台数据统计管理 ====================
@@ -181,7 +253,7 @@ export async function updatePlatformStats(data: UpdatePlatformStatsRequest): Pro
 }
 
 export async function getPlatformStats(): Promise<PlatformStats> {
-  const response = await apiClient.post('/api/v1/admin/dashboard/platform-stats', {});
-  return response.data.stats;
+  const response = await apiClient.post<StatsResponse>('/api/v1/admin/dashboard/platform-stats', {});
+  return response.stats;
 }
 

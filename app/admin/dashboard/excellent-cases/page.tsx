@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Loader2, Play } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getExcellentCaseList, 
@@ -17,7 +17,6 @@ import {
   UpdateExcellentCaseRequest
 } from "@/lib/api/dashboard";
 import ExcellentCaseModal from "@/components/admin/excellent-case-modal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination";
 
 export default function ExcellentCasesPage() {
@@ -25,12 +24,16 @@ export default function ExcellentCasesPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState<ExcellentCase | null>(null);
-  const [videoPreview, setVideoPreview] = useState<ExcellentCase | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
   const { toast } = useToast();
+
+  const truncateUrl = (url: string, maxLength: number = 16) => {
+    if (url.length <= maxLength) return url;
+    return url.substring(0, maxLength) + '...';
+  };
 
   useEffect(() => {
     fetchCases();
@@ -143,6 +146,7 @@ export default function ExcellentCasesPage() {
                     <TableHead>ID</TableHead>
                     <TableHead>封面</TableHead>
                     <TableHead>标题</TableHead>
+                    <TableHead>视频链接</TableHead>
                     <TableHead>描述</TableHead>
                     <TableHead>排序</TableHead>
                     <TableHead>状态</TableHead>
@@ -153,7 +157,7 @@ export default function ExcellentCasesPage() {
                 <TableBody>
                   {cases.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                      <TableCell colSpan={9} className="text-center text-gray-500 py-8">
                         暂无数据
                       </TableCell>
                     </TableRow>
@@ -162,20 +166,26 @@ export default function ExcellentCasesPage() {
                       <TableRow key={caseItem.id}>
                         <TableCell>{caseItem.id}</TableCell>
                         <TableCell>
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 group cursor-pointer"
-                            onClick={() => setVideoPreview(caseItem)}
-                          >
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
                             <img 
                               src={caseItem.cover_url} 
                               alt={caseItem.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Play className="h-6 w-6 text-white" />
-                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">{caseItem.title}</TableCell>
+                        <TableCell>
+                          <a
+                            href={caseItem.video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            title={caseItem.video_url}
+                          >
+                            {truncateUrl(caseItem.video_url)}
+                          </a>
+                        </TableCell>
                         <TableCell className="max-w-xs truncate">{caseItem.description}</TableCell>
                         <TableCell>{caseItem.sort_order}</TableCell>
                         <TableCell>
@@ -232,27 +242,6 @@ export default function ExcellentCasesPage() {
         onSave={handleSave}
         initialData={selectedCase}
       />
-
-      {/* Video Preview Dialog */}
-      <Dialog open={!!videoPreview} onOpenChange={() => setVideoPreview(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{videoPreview?.title}</DialogTitle>
-          </DialogHeader>
-          {videoPreview && (
-            <div className="aspect-video w-full">
-              <video 
-                src={videoPreview.video_url} 
-                controls 
-                autoPlay
-                className="w-full h-full rounded-lg"
-              >
-                您的浏览器不支持视频播放
-              </video>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

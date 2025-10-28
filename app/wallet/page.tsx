@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Wallet as WalletIcon,
@@ -31,8 +31,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -55,7 +53,6 @@ import {
   getTransactionTypeText,
   getTransactionStatusText,
   mapTransactionStatus,
-  getPaymentMethodText,
   getRechargeOrderStatusText,
   mapRechargeOrderStatus,
   type WalletInfo,
@@ -70,13 +67,11 @@ interface DailySpending {
   kol: number;
 }
 
-const COLORS = {
-  ads: "#3b82f6", // blue
-  kol: "#8b5cf6", // purple
-  primary: "#6366f1",
-  success: "#10b981",
-  warning: "#f59e0b",
-};
+interface CategorySpending {
+  name: string;
+  value: number;
+  percentage: number;
+}
 
 export default function Wallet() {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
@@ -84,43 +79,17 @@ export default function Wallet() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]); // 存储所有交易用于图表
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [chartDataLoading, setChartDataLoading] = useState(true);
   const [rechargeOrdersLoading, setRechargeOrdersLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rechargeCurrentPage, setRechargeCurrentPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [rechargeTotal, setRechargeTotal] = useState(0);
   const pageSize = 10;
 
-  // Mock data for charts - will be replaced with real data in future
-  const dailySpending: DailySpending[] = [
-    { date: '10-20', amount: 12500, ads: 8000, kol: 4500 },
-    { date: '10-21', amount: 15000, ads: 9500, kol: 5500 },
-    { date: '10-22', amount: 11000, ads: 7000, kol: 4000 },
-    { date: '10-23', amount: 18000, ads: 11000, kol: 7000 },
-    { date: '10-24', amount: 14500, ads: 9000, kol: 5500 },
-    { date: '10-25', amount: 16000, ads: 10000, kol: 6000 },
-    { date: '10-26', amount: 13500, ads: 8500, kol: 5000 },
-  ];
-
-  // 加载钱包信息
-  useEffect(() => {
-    loadWalletInfo();
-  }, []);
-
-  // 加载交易记录（消费账单）
-  useEffect(() => {
-    loadTransactions();
-  }, [currentPage]);
-
-  // 加载充值订单
-  useEffect(() => {
-    loadRechargeOrders();
-  }, [rechargeCurrentPage]);
-
-  const loadWalletInfo = async () => {
+  const loadWalletInfo = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getWalletInfo();
@@ -137,9 +106,9 @@ export default function Wallet() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadTransactions = async (type?: string, status?: string) => {
+  const loadTransactions = useCallback(async (type?: string, status?: string) => {
     try {
       setTransactionsLoading(true);
       const response = await getTransactionList({
@@ -149,7 +118,6 @@ export default function Wallet() {
         page_size: pageSize,
       });
       setTransactions(response.transactions || []);
-      setTotal(response.total || 0);
     } catch (error) {
       console.error('Failed to load transactions:', error);
       toast({
@@ -160,9 +128,9 @@ export default function Wallet() {
     } finally {
       setTransactionsLoading(false);
     }
-  };
+  }, [currentPage, pageSize]);
 
-  const loadRechargeOrders = async (status?: 'pending' | 'confirmed' | 'failed' | 'cancelled') => {
+  const loadRechargeOrders = useCallback(async (status?: 'pending' | 'confirmed' | 'failed' | 'cancelled') => {
     try {
       setRechargeOrdersLoading(true);
       const response = await getMyRechargeOrders({
@@ -171,7 +139,6 @@ export default function Wallet() {
         page_size: pageSize,
       });
       setRechargeOrders(response.orders || []);
-      setRechargeTotal(response.total || 0);
     } catch (error) {
       console.error('Failed to load recharge orders:', error);
       toast({
@@ -182,32 +149,163 @@ export default function Wallet() {
     } finally {
       setRechargeOrdersLoading(false);
     }
-  };
+  }, [rechargeCurrentPage, pageSize]);
+
+  // 加载图表数据
+  const loadChartData = useCallback(async () => {
+    try {
+      setChartDataLoading(true);
+      // 根据时间范围获取足够多的消费记录
+      const chartPageSize = timeRange === '7d' ? 100 : timeRange === '30d' ? 300 : 1000;
+      const response = await getTransactionList({
+        type: 'consume',
+        status: 'COMPLETED', // 只统计已完成的交易
+        page: 1,
+        page_size: chartPageSize,
+      });
+      setAllTransactions(response.transactions || []);
+    } catch (error) {
+      console.error('Failed to load chart data:', error);
+      // 不显示错误提示，只是不展示图表
+    } finally {
+      setChartDataLoading(false);
+    }
+  }, [timeRange]);
+
+  // 加载钱包信息
+  useEffect(() => {
+    loadWalletInfo();
+  }, [loadWalletInfo]);
+
+  // 加载交易记录（消费账单）
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  // 加载充值订单
+  useEffect(() => {
+    loadRechargeOrders();
+  }, [loadRechargeOrders]);
+
+  // 加载图表数据（根据时间范围加载所有消费记录）
+  useEffect(() => {
+    loadChartData();
+  }, [loadChartData]);
 
   // 计算统计数据
   const currentBalance = walletInfo ? parseFloat(walletInfo.balance) : 0;
   const totalRecharge = walletInfo ? parseFloat(walletInfo.total_recharge) : 0;
   const totalSpending = walletInfo ? parseFloat(walletInfo.total_consume) : 0;
   
-  // 今日消费（从交易记录中计算）
+  // 今日消费（从所有交易记录中计算）
   const today = new Date().toISOString().split('T')[0];
-  const todaySpending = transactions
-    .filter((t) => t.type === 'CONSUME' && t.created_at?.startsWith(today))
+  const todaySpending = allTransactions
+    .filter((t) => t.status === 'COMPLETED' && t.created_at?.startsWith(today))
     .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
 
-  // 计算分类消费（从交易记录中统计 - 需要后端提供分类信息）
-  const categorySpending = [
-    {
-      name: "广告投放",
-      value: totalSpending * 0.6, // 临时估算
-      color: COLORS.ads,
-    },
-    {
-      name: "KOL营销",
-      value: totalSpending * 0.4, // 临时估算
-      color: COLORS.kol,
-    },
-  ];
+  // 根据时间范围生成每日消费数据
+  const getDaysCount = () => {
+    switch (timeRange) {
+      case '7d': return 7;
+      case '30d': return 30;
+      case '90d': return 90;
+      default: return 7;
+    }
+  };
+
+  const generateDailySpending = (): DailySpending[] => {
+    const days = getDaysCount();
+    const now = new Date();
+    const dailyData: Map<string, DailySpending> = new Map();
+
+    // 初始化所有日期为0
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
+      dailyData.set(dateStr, {
+        date: dateStr,
+        amount: 0,
+        ads: 0,
+        kol: 0,
+      });
+    }
+
+    // 统计实际消费数据
+    allTransactions
+      .filter(t => t.status === 'COMPLETED')
+      .forEach(transaction => {
+        const transactionDate = new Date(transaction.created_at);
+        const daysDiff = Math.floor((now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff >= 0 && daysDiff < days) {
+          const dateStr = `${transactionDate.getMonth() + 1}-${transactionDate.getDate()}`;
+          const existing = dailyData.get(dateStr);
+          if (existing) {
+            const amount = parseFloat(transaction.amount || '0');
+            existing.amount += amount;
+            
+            // 根据 remark 或 related_order_id 判断类型（需要后端提供分类字段）
+            // 暂时平均分配，后续可以根据实际业务逻辑调整
+            const remark = transaction.remark?.toLowerCase() || '';
+            if (remark.includes('ad') || remark.includes('广告')) {
+              existing.ads += amount;
+            } else if (remark.includes('kol')) {
+              existing.kol += amount;
+            } else {
+              // 如果没有明确标识，平均分配
+              existing.ads += amount * 0.6;
+              existing.kol += amount * 0.4;
+            }
+          }
+        }
+      });
+
+    return Array.from(dailyData.values());
+  };
+
+  const dailySpending = generateDailySpending();
+
+  // 计算分类消费（从交易记录中统计）
+  const generateCategorySpending = (): CategorySpending[] => {
+    let adsTotal = 0;
+    let kolTotal = 0;
+
+    allTransactions
+      .filter(t => t.status === 'COMPLETED')
+      .forEach(transaction => {
+        const amount = parseFloat(transaction.amount || '0');
+        const remark = transaction.remark?.toLowerCase() || '';
+        
+        if (remark.includes('ad') || remark.includes('广告')) {
+          adsTotal += amount;
+        } else if (remark.includes('kol')) {
+          kolTotal += amount;
+        } else {
+          // 如果没有明确标识，平均分配
+          adsTotal += amount * 0.6;
+          kolTotal += amount * 0.4;
+        }
+      });
+
+    const total = adsTotal + kolTotal;
+    
+    return [
+      {
+        name: "广告投放",
+        value: adsTotal,
+        percentage: total > 0 ? (adsTotal / total) * 100 : 0,
+      },
+      {
+        name: "KOL营销",
+        value: kolTotal,
+        percentage: total > 0 ? (kolTotal / total) * 100 : 0,
+      },
+    ];
+  };
+
+  const categorySpending = generateCategorySpending();
+  const hasChartData = allTransactions.length > 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -330,10 +428,10 @@ export default function Wallet() {
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-3">
-          <p className="font-medium mb-2">{label}</p>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3">
+          <p className="text-xs font-medium text-gray-900 mb-2">{label}</p>
           {payload.map((entry, index: number) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
+            <p key={index} className="text-xs text-gray-600">
               {entry.name}: {formatCurrency(entry.value)}
             </p>
           ))}
@@ -395,7 +493,7 @@ export default function Wallet() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">今日消费</p>
               <p className="text-2xl font-bold">{formatCurrency(todaySpending)}</p>
-              <p className="text-xs text-orange-600">较昨日 +12.5%</p>
+              <p className="text-xs text-muted-foreground">基于实际消费账单</p>
             </div>
           </CardContent>
         </Card>
@@ -606,92 +704,145 @@ export default function Wallet() {
       <div className="grid gap-6 md:grid-cols-2">
         {/* 每日消费趋势图 */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>消费趋势</span>
-              <div className="flex gap-2">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">消费趋势</CardTitle>
+              <div className="flex gap-1">
                 <Button
-                  variant={timeRange === "7d" ? "default" : "outline"}
+                  variant={timeRange === "7d" ? "default" : "ghost"}
                   size="sm"
+                  className={timeRange === "7d" ? "h-7 px-2 text-xs bg-black text-white hover:bg-gray-800" : "h-7 px-2 text-xs text-gray-600 hover:bg-gray-100"}
                   onClick={() => setTimeRange("7d")}
                 >
                   7天
                 </Button>
                 <Button
-                  variant={timeRange === "30d" ? "default" : "outline"}
+                  variant={timeRange === "30d" ? "default" : "ghost"}
                   size="sm"
+                  className={timeRange === "30d" ? "h-7 px-2 text-xs bg-black text-white hover:bg-gray-800" : "h-7 px-2 text-xs text-gray-600 hover:bg-gray-100"}
                   onClick={() => setTimeRange("30d")}
                 >
                   30天
                 </Button>
+                <Button
+                  variant={timeRange === "90d" ? "default" : "ghost"}
+                  size="sm"
+                  className={timeRange === "90d" ? "h-7 px-2 text-xs bg-black text-white hover:bg-gray-800" : "h-7 px-2 text-xs text-gray-600 hover:bg-gray-100"}
+                  onClick={() => setTimeRange("90d")}
+                >
+                  90天
+                </Button>
               </div>
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dailySpending}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="ads" name="广告投放" fill={COLORS.ads} radius={[8, 8, 0, 0]} />
-                <Bar dataKey="kol" name="KOL营销" fill={COLORS.kol} radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartDataLoading ? (
+              <div className="flex items-center justify-center h-[280px]">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : !hasChartData ? (
+              <div className="flex flex-col items-center justify-center h-[280px] text-center">
+                <Activity className="h-8 w-8 text-gray-300 mb-2" />
+                <p className="text-sm font-medium text-gray-900 mb-1">暂无消费数据</p>
+                <p className="text-xs text-gray-500">开始投放广告或与KOL合作后，消费趋势将显示在这里</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={dailySpending} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 11, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickLine={{ stroke: '#E5E7EB' }}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F9FAFB' }} />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                    iconType="circle"
+                    iconSize={8}
+                  />
+                  <Bar dataKey="ads" name="广告投放" fill="#000000" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="kol" name="KOL营销" fill="#6B7280" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
         {/* 消费分类饼图 */}
         <Card>
-          <CardHeader>
-            <CardTitle>消费分类</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">消费分类</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categorySpending}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(props) =>
-                    `${(props as unknown as { name: string; percent: number }).name} ${((props as unknown as { name: string; percent: number }).percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {categorySpending.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {categorySpending.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
+            {chartDataLoading ? (
+              <div className="flex items-center justify-center h-[280px]">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : !hasChartData ? (
+              <div className="flex flex-col items-center justify-center h-[280px] text-center">
+                <CreditCard className="h-8 w-8 text-gray-300 mb-2" />
+                <p className="text-sm font-medium text-gray-900 mb-1">暂无消费数据</p>
+                <p className="text-xs text-gray-500">消费分类统计将在您开始使用服务后显示</p>
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={categorySpending}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      paddingAngle={2}
+                    >
+                      <Cell fill="#000000" />
+                      <Cell fill="#6B7280" />
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
                     />
-                    <span className="text-sm">{item.name}</span>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {formatCurrency(item.value)}
-                  </span>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-3">
+                  {categorySpending.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: index === 0 ? '#000000' : '#6B7280' }}
+                        />
+                        <span className="text-xs text-gray-600">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-gray-900">
+                          {formatCurrency(item.value)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

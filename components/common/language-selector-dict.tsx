@@ -1,51 +1,30 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { getDictionaryTree, DictionaryItemInfo } from "@/lib/api/dictionary";
-import { isSuccessResponse } from "@/lib/api-client";
+import { useDictionaryTree } from "@/hooks/use-dictionary";
 
 interface LanguageSelectorDictProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
+  multiple?: boolean; // 是否支持多选，默认 true
 }
 
 export default function LanguageSelectorDict({
   value = [],
   onChange,
-  placeholder = "选择语言"
+  placeholder = "选择语言",
+  multiple = true,
 }: LanguageSelectorDictProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [languages, setLanguages] = useState<DictionaryItemInfo[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  // 加载字典数据
-  useEffect(() => {
-    loadLanguages();
-  }, []);
-
-  const loadLanguages = async () => {
-    setLoading(true);
-    try {
-      const result = await getDictionaryTree({
-        dictionary_code: "LANGUAGE",
-        only_enabled: 1,
-      });
-      
-      if (isSuccessResponse(result.base_resp)) {
-        setLanguages(result.tree || []);
-      }
-    } catch (err) {
-      console.error("Failed to load languages:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 使用缓存加载字典数据
+  const { tree: languages, loading } = useDictionaryTree("LANGUAGE");
 
   // 过滤语言
   const filteredLanguages = useMemo(() => {
@@ -59,6 +38,20 @@ export default function LanguageSelectorDict({
   }, [searchQuery, languages]);
 
   const handleSelect = (languageCode: string) => {
+    if (!multiple) {
+      // 单选模式：直接设置为选中的项
+      const isSelected = value.includes(languageCode);
+      if (isSelected) {
+        // 如果已经选中，则取消选中
+        onChange?.([]);
+      } else {
+        // 否则选中新项（替换之前的选中）
+        onChange?.([languageCode]);
+      }
+      return;
+    }
+
+    // 多选模式：原有逻辑
     const newValue = [...value];
     const index = newValue.indexOf(languageCode);
 
@@ -123,7 +116,7 @@ export default function LanguageSelectorDict({
 
       {/* 下拉面板 */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-[400px] flex flex-col">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[400px] flex flex-col">
           {/* 搜索框 */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
@@ -165,10 +158,12 @@ export default function LanguageSelectorDict({
                           handleSelect(language.code);
                         }}
                       >
-                        <Checkbox
-                          checked={isSelected}
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                        {multiple && (
+                          <Checkbox
+                            checked={isSelected}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
                         <span className="text-sm font-medium flex-1">{language.name}</span>
                       </div>
                     );
@@ -201,7 +196,7 @@ export default function LanguageSelectorDict({
       {/* 点击外部关闭 */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[9998]"
           onClick={() => setIsOpen(false)}
         />
       )}

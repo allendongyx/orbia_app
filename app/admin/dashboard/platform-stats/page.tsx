@@ -187,7 +187,7 @@ export default function PlatformStatsPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="active_kols">活跃 KOLs 数量</Label>
                 <Input
                   id="active_kols"
@@ -198,7 +198,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="total_coverage">总覆盖用户数</Label>
                 <Input
                   id="total_coverage"
@@ -209,7 +209,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="total_ad_impressions">累计广告曝光次数</Label>
                 <Input
                   id="total_ad_impressions"
@@ -220,7 +220,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="total_transaction_amount">平台总交易额 (USD)</Label>
                 <Input
                   id="total_transaction_amount"
@@ -232,7 +232,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="average_roi">平均 ROI (%)</Label>
                 <Input
                   id="average_roi"
@@ -244,7 +244,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="average_cpm">平均 CPM (USD)</Label>
                 <Input
                   id="average_cpm"
@@ -256,7 +256,7 @@ export default function PlatformStatsPage() {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="web3_brand_count">合作 Web3 品牌数</Label>
                 <Input
                   id="web3_brand_count"

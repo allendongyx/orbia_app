@@ -148,7 +148,7 @@ export async function apiRequest<T>(
 }
 
 // API 客户端对象
-const apiClient = {
+export const apiClient = {
   get: <T>(endpoint: string, options?: RequestInit): Promise<T> => {
     return apiRequest<T>(endpoint, { ...options, method: 'GET' });
   },

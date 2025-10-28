@@ -77,7 +77,7 @@ export default function KOLReceivedOrders() {
         toast({
           title: "加载失败",
           description: result.base_resp.msg || "加载订单列表失败",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (err) {
@@ -85,7 +85,7 @@ export default function KOLReceivedOrders() {
       toast({
         title: "错误",
         description: "加载订单列表失败",
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ export default function KOLReceivedOrders() {
       toast({
         title: "提示",
         description: "请填写拒绝原因",
-        variant: "destructive",
+        variant: "error",
       });
       return;
     }
@@ -153,7 +153,7 @@ export default function KOLReceivedOrders() {
         toast({
           title: "失败",
           description: result.base_resp.msg || "操作失败",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (err) {
@@ -161,7 +161,7 @@ export default function KOLReceivedOrders() {
       toast({
         title: "错误",
         description: "操作失败",
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setSubmitting(false);
@@ -180,7 +180,7 @@ export default function KOLReceivedOrders() {
       title: "Pending",
       value: orders.filter((o) => o.status === "pending").length.toString(),
       icon: AlertCircle,
-      gradient: "yellow" as const,
+      gradient: "orange" as const,
     },
     {
       title: "In Progress",

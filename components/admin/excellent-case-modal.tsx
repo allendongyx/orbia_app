@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ExcellentCase } from "@/lib/api/dashboard";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { CoverUploadDialog } from "@/components/kol/cover-upload-dialog";
 
 interface ExcellentCaseModalProps {
   open: boolean;
@@ -31,6 +32,7 @@ export default function ExcellentCaseModal({
     status: 1,
   });
   const [loading, setLoading] = useState(false);
+  const [showCoverSelector, setShowCoverSelector] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -80,8 +82,8 @@ export default function ExcellentCaseModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-5">
+            <div className="space-y-2">
               <Label htmlFor="title">案例标题 *</Label>
               <Input
                 id="title"
@@ -92,7 +94,7 @@ export default function ExcellentCaseModal({
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="video_url">视频 URL *</Label>
               <Input
                 id="video_url"
@@ -103,30 +105,45 @@ export default function ExcellentCaseModal({
               />
             </div>
 
-            <div>
-              <Label htmlFor="cover_url">封面图片 URL *</Label>
-              <Input
-                id="cover_url"
-                value={formData.cover_url}
-                onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-                placeholder="https://example.com/cover.jpg"
-                required
-              />
-              {formData.cover_url && (
-                <div className="mt-2">
-                  <img 
-                    src={formData.cover_url} 
-                    alt="封面预览" 
-                    className="w-full h-48 object-cover rounded-lg"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label>封面图片 *</Label>
+              <div className="mt-2">
+                {formData.cover_url ? (
+                  <div className="space-y-2">
+                    <div className="relative inline-block">
+                      <img
+                        src={formData.cover_url}
+                        alt="封面预览"
+                        className="w-64 h-64 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowCoverSelector(true)}
+                    >
+                      更换封面
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCoverSelector(true)}
+                    className="w-64 h-64 border-2 border-dashed border-gray-300 hover:border-blue-500 flex flex-col items-center justify-center gap-2"
+                  >
+                    <Plus className="h-8 w-8 text-gray-400" />
+                    <span className="text-sm text-gray-600">上传封面图片</span>
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                建议尺寸: 16:9 或 1:1，用于案例展示
+              </p>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="description">案例描述</Label>
               <Textarea
                 id="description"
@@ -138,7 +155,7 @@ export default function ExcellentCaseModal({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="sort_order">排序序号</Label>
                 <Input
                   id="sort_order"
@@ -150,7 +167,7 @@ export default function ExcellentCaseModal({
                 <p className="text-xs text-gray-500 mt-1">数字越小越靠前</p>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="status">状态</Label>
                 <select
                   id="status"
@@ -176,6 +193,16 @@ export default function ExcellentCaseModal({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* 封面上传对话框 */}
+      <CoverUploadDialog
+        open={showCoverSelector}
+        onOpenChange={setShowCoverSelector}
+        onConfirm={(url: string) => {
+          setFormData({ ...formData, cover_url: url });
+          setShowCoverSelector(false);
+        }}
+      />
     </Dialog>
   );
 }

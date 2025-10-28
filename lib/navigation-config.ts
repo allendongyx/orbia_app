@@ -53,12 +53,12 @@ export const mainNavItems: NavigationItem[] = [
         icon: ShoppingBag,
       },
       {
-        title: "我发起的订单",
+        title: "Orders Placed",
         href: "/kol/orders/placed",
         icon: Receipt,
       },
       {
-        title: "我收到的订单",
+        title: "Orders Received",
         href: "/kol/orders/received",
         icon: Receipt,
         requireKol: true, // 标记为仅KOL可见
@@ -75,81 +75,81 @@ export const mainNavItems: NavigationItem[] = [
 // 管理员导航菜单
 export const adminNavItems: NavigationItem[] = [
   {
-    title: "管理用户和团队",
+    title: "Users & Teams",
     icon: Shield,
     children: [
       {
-        title: "用户列表",
+        title: "Users",
         href: "/admin/users",
         icon: UserCog,
       },
       {
-        title: "KOL 列表",
+        title: "KOLs",
         href: "/admin/kols",
         icon: UsersRound,
       },
       {
-        title: "团队列表",
+        title: "Teams",
         href: "/admin/teams",
         icon: Building2,
       },
     ],
   },
   {
-    title: "订单管理",
+    title: "Order Management",
     icon: FileText,
     children: [
       {
-        title: "KOL 订单",
+        title: "KOL Orders",
         href: "/admin/orders/kol",
         icon: UsersRound,
       },
       {
-        title: "广告订单",
+        title: "Ad Orders",
         href: "/admin/orders/ad",
         icon: Tv,
       },
       {
-        title: "充值订单",
+        title: "Recharge Orders",
         href: "/admin/orders/recharge",
         icon: DollarSign,
       },
     ],
   },
   {
-    title: "系统设置",
-    icon: Settings,
-    children: [
-      {
-        title: "字典管理",
-        href: "/admin/dictionary",
-        icon: BookOpen,
-      },
-      {
-        title: "收款设置",
-        href: "/admin/payment-settings",
-        icon: CreditCard,
-      },
-    ],
-  },
-  {
-    title: "运营管理",
+    title: "Operations",
     icon: BarChart3,
     children: [
       {
-        title: "优秀广告案例",
+        title: "Excellent Cases",
         href: "/admin/dashboard/excellent-cases",
         icon: Video,
       },
       {
-        title: "内容趋势",
+        title: "Content Trends",
         href: "/admin/dashboard/content-trends",
         icon: TrendingUp,
       },
       {
-        title: "平台数据",
+        title: "Platform Stats",
         href: "/admin/dashboard/platform-stats",
         icon: Database,
+      },
+    ],
+  },
+  {
+    title: "System Settings",
+    icon: Settings,
+    children: [
+      {
+        title: "Dictionary",
+        href: "/admin/dictionary",
+        icon: BookOpen,
+      },
+      {
+        title: "Payment Settings",
+        href: "/admin/payment-settings",
+        icon: CreditCard,
       },
     ],
   },

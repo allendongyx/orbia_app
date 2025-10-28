@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getKolInfo, getKolPlans, KolInfo, KolPlan } from "@/lib/api/kol";
 import { createKolOrder } from "@/lib/api/kol-order";
 import { isSuccessResponse } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { DictionaryText } from "@/components/common/dictionary-text";
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -370,12 +372,24 @@ export default function CreateOrderPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold text-lg">
-                    {kolInfo.display_name.slice(0, 2).toUpperCase()}
-                  </div>
+                  <Avatar className="w-12 h-12 rounded-xl">
+                    <AvatarImage 
+                      src={kolInfo.avatar_url} 
+                      alt={kolInfo.display_name}
+                    />
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold text-lg">
+                      {kolInfo.display_name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="font-semibold text-gray-900">{kolInfo.display_name}</h3>
-                    <p className="text-sm text-gray-600">{kolInfo.country}</p>
+                    <p className="text-sm text-gray-600">
+                      <DictionaryText 
+                        dictionaryCode="COUNTRY" 
+                        code={kolInfo.country} 
+                        fallback={kolInfo.country} 
+                      />
+                    </p>
                   </div>
                 </div>
                 {kolInfo.tags && kolInfo.tags.length > 0 && (
@@ -403,7 +417,16 @@ export default function CreateOrderPage() {
               <CardContent className="space-y-3">
                 <div className="p-4 bg-white rounded-xl">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{selectedPlan.title}</h3>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">{selectedPlan.title}</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        <DictionaryText 
+                          dictionaryCode="KOL_PLAN_TYPE" 
+                          code={selectedPlan.plan_type} 
+                          fallback={selectedPlan.plan_type} 
+                        />
+                      </Badge>
+                    </div>
                     {selectedPlan.plan_type === 'standard' && (
                       <Badge className="bg-blue-600 text-white">推荐</Badge>
                     )}

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import DefaultLayout from "@/components/layout/default-layout";
 import { AuthProvider } from "@/contexts/auth-context";
+import { DictionaryProvider } from "@/contexts/dictionary-context";
 import { Toaster } from "@/components/ui/toaster";
 import Intercom from "@intercom/messenger-js-sdk";
 
@@ -36,8 +37,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <DefaultLayout>{children}</DefaultLayout>
-          <Toaster />
+          <DictionaryProvider>
+            <DefaultLayout>{children}</DefaultLayout>
+            <Toaster />
+          </DictionaryProvider>
         </AuthProvider>
       </body>
     </html>

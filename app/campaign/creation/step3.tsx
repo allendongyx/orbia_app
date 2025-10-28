@@ -1,39 +1,77 @@
 "use client";
 
 import React, { useState } from "react";
-import { Upload, Image as ImageIcon, Video, FileText, Globe, CheckCircle, HelpCircle } from "lucide-react";
+import { Upload, Image as ImageIcon, Video, Globe, CheckCircle, HelpCircle, X, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { useFileUpload } from "@/hooks/use-image-upload";
+import { CampaignFormData } from "./page";
 
-export default function Step3() {
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [adCopy, setAdCopy] = useState("");
+interface Step3Props {
+  formData: CampaignFormData;
+  updateFormData: (data: Partial<CampaignFormData>) => void;
+}
 
-  const ctaOptions = [
-    { value: "learn-more", label: "Learn More" },
-    { value: "sign-up", label: "Sign Up" },
-    { value: "get-started", label: "Get Started" },
-    { value: "play-now", label: "Play Now" },
-    { value: "join-now", label: "Join Now" },
-    { value: "explore", label: "Explore" },
-  ];
+export default function Step3({ formData, updateFormData }: Step3Props) {
+  const { toast } = useToast();
+  // 允许图片和视频文件
+  const { uploadFile, isUploading } = useFileUpload({
+    allowedTypes: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'webm'],
+    maxSize: 100 * 1024 * 1024, // 100MB
+  });
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string; type: string }>>(
+    (formData.attachment_urls || [])
+      .filter((url): url is string => typeof url === 'string' && url.length > 0)
+      .map(url => ({
+        url,
+        name: url.split('/').pop() || '',
+        type: url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov') ? 'video' : 'image'
+      }))
+  );
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const url = await uploadFile(file);
+    
+    if (url) {
+      const newFile = {
+        url,
+        name: file.name,
+        type: file.type.startsWith('video/') ? 'video' : 'image'
+      };
+
+      const newFiles = [...uploadedFiles, newFile];
+      setUploadedFiles(newFiles);
+      updateFormData({ attachment_urls: newFiles.map(f => f.url) });
+    }
+    
+    // 清空 input，允许重复上传同一个文件
+    event.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+    setUploadedFiles(newFiles);
+    updateFormData({ attachment_urls: newFiles.map(f => f.url) });
+  };
+
+  // 检查是否需要显示 Website URL
+  const needsWebsite = formData.optimization_goal === 'website';
+  
+  // 检查是否需要显示 App Download URLs
+  const needsApp = formData.optimization_goal === 'app' || formData.optimization_goal === 'app_promotion';
 
   return (
     <div className="max-w-5xl space-y-5">
@@ -63,21 +101,50 @@ export default function Step3() {
           <CardContent className="p-4">
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <div className="rounded-full bg-blue-50 p-3 mb-3">
-                <Upload className="h-6 w-6 text-blue-700" />
+                {isUploading ? (
+                  <Loader2 className="h-6 w-6 text-blue-700 animate-spin" />
+                ) : (
+                  <Upload className="h-6 w-6 text-blue-700" />
+                )}
               </div>
               <h3 className="text-base font-semibold mb-1">Upload Your Creative</h3>
               <p className="text-xs text-muted-foreground mb-3 max-w-md">
-                Drag and drop your files here, or click to browse
+                {isUploading ? 'Uploading...' : 'Click to browse and select files'}
               </p>
               <div className="flex gap-2 mb-3">
-                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
-                  <ImageIcon className="h-3.5 w-3.5" />
-                  Images
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
-                  <Video className="h-3.5 w-3.5" />
-                  Videos
-                </Button>
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" disabled={isUploading} asChild>
+                    <span>
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      Images
+                    </span>
+                  </Button>
+                </Label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+
+                <Label htmlFor="video-upload" className="cursor-pointer">
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" disabled={isUploading} asChild>
+                    <span>
+                      <Video className="h-3.5 w-3.5" />
+                      Videos
+                    </span>
+                  </Button>
+                </Label>
+                <input
+                  id="video-upload"
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
               </div>
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span>• Images: JPG, PNG (Max 10MB)</span>
@@ -91,211 +158,154 @@ export default function Step3() {
         {uploadedFiles.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {uploadedFiles.map((file, index) => (
-              <Card key={index}>
+              <Card key={index} className="relative group">
                 <CardContent className="p-3">
-                  <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center mb-2">
-                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                  <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center mb-2 overflow-hidden">
+                    {file.type === 'video' ? (
+                      <Video className="h-8 w-8 text-gray-400" />
+                    ) : file.url ? (
+                      <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-gray-400" />
+                    )}
                   </div>
-                  <p className="text-xs text-center truncate">{file}</p>
+                  <p className="text-xs text-center truncate">{file.name}</p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeFile(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-
-        {/* Ad Copy */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="ad-copy" className="text-sm font-medium flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
-              Ad Copy
-            </Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Write compelling text that highlights your value proposition. Keep it concise and action-oriented</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <Textarea
-            id="ad-copy"
-            placeholder="Write compelling ad copy that resonates with your target audience..."
-            className="min-h-24 resize-none text-sm"
-            value={adCopy}
-            onChange={(e) => setAdCopy(e.target.value)}
-            maxLength={500}
-          />
-          <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Make it catchy and relevant to your campaign goal</span>
-            <span>{adCopy.length}/500</span>
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="cta" className="text-sm font-medium">
-              Call to Action (CTA)
-            </Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Select the action button text. Choose one that matches your campaign goal</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <Select defaultValue="learn-more">
-            <SelectTrigger id="cta" className="max-w-md h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ctaOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-[11px] text-muted-foreground">
-            Choose a clear action for users to take
-          </p>
-        </div>
       </div>
 
-      {/* Landing Page */}
+      {/* Landing Page / App Links */}
       <div className="space-y-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-lg font-bold">Landing Page</h2>
+            <h2 className="text-lg font-bold">Destination</h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Direct users to a page optimized for conversions. Ensure it matches your ad content</p>
+                  <p>Where should users go when they click your ad?</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <p className="text-xs text-muted-foreground">
-            Where should users go when they click your ad?
+            Set up where users will be directed after clicking your ad
           </p>
         </div>
 
-        <RadioGroup defaultValue="url" className="gap-2">
-          <Label htmlFor="landing-url">
-            <Card className="cursor-pointer hover:border-blue-700 transition-all has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2.5">
-                  <RadioGroupItem value="url" id="landing-url" className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Globe className="h-4 w-4 text-blue-700" />
-                      <span className="font-semibold text-sm">
-                        Website URL
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Direct users to an existing website or landing page
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor="target-url" className="text-xs font-medium">
-                            Destination URL
-                          </Label>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Enter the full URL where users will land. Must start with https://</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <Input
-                          id="target-url"
-                          placeholder="https://example.com/landing-page"
-                          className="font-mono text-xs h-8"
-                        />
-                      </div>
-                      
-                      <div className="rounded-md bg-blue-50 border border-blue-200 p-2">
-                        <div className="flex gap-1.5">
-                          <CheckCircle className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-blue-900">
-                            <strong>Pro tip:</strong> Use UTM parameters to track campaign performance in your analytics
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        {/* Website URL - Show if optimization goal is website */}
+        {needsWebsite && (
+          <Card className="border border-blue-700/30 bg-blue-50/30">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-700" />
+                  <span className="font-semibold text-sm">
+                    Website URL <span className="text-red-500">*</span>
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          </Label>
-
-          <Label htmlFor="landing-custom">
-            <Card className="cursor-pointer hover:border-blue-700 transition-all opacity-60 has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2.5">
-                  <RadioGroupItem value="custom" id="landing-custom" disabled className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold text-sm text-muted-foreground">
-                        Orbia Custom Page
-                      </span>
-                      <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full font-medium">
-                        Coming Soon
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Create a custom landing page within Orbia platform
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Label>
-        </RadioGroup>
-
-        {/* Preview */}
-        <Card className="bg-gradient-to-br from-gray-50 to-gray-100">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold mb-3">Ad Preview</h3>
-            <div className="bg-white rounded-md border border-gray-200 p-3 space-y-2.5">
-              <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <ImageIcon className="h-10 w-10 mx-auto mb-2" />
-                  <p className="text-xs">Your creative will appear here</p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium line-clamp-2">
-                  {adCopy || "Your ad copy will appear here"}
+                <p className="text-xs text-muted-foreground">
+                  Direct users to an existing website or landing page
                 </p>
-                <Button size="sm" className="w-full h-8 text-xs">
-                  Learn More
-                </Button>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="website-url" className="text-xs font-medium">
+                    Destination URL
+                  </Label>
+                  <Input
+                    id="website-url"
+                    placeholder="https://example.com/landing-page"
+                    className="font-mono text-xs h-9"
+                    value={formData.website || ''}
+                    onChange={(e) => updateFormData({ website: e.target.value })}
+                  />
+                </div>
+                
+                <div className="rounded-md bg-blue-50 border border-blue-200 p-2">
+                  <div className="flex gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-blue-900">
+                      <strong>Pro tip:</strong> Use UTM parameters to track campaign performance in your analytics
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* App Download URLs - Show if optimization goal is app */}
+        {needsApp && (
+          <Card className="border border-purple-700/30 bg-purple-50/30">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-purple-700" />
+                  <span className="font-semibold text-sm">
+                    App Download Links {formData.optimization_goal === 'app' && <span className="text-red-500">*</span>}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Provide download links for your mobile app
+                </p>
+                
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ios-url" className="text-xs font-medium flex items-center gap-1.5">
+                      <span>🍎</span>
+                      iOS Download URL (App Store)
+                    </Label>
+                    <Input
+                      id="ios-url"
+                      placeholder="https://apps.apple.com/..."
+                      className="font-mono text-xs h-9"
+                      value={formData.ios_download_url || ''}
+                      onChange={(e) => updateFormData({ ios_download_url: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="android-url" className="text-xs font-medium flex items-center gap-1.5">
+                      <span>🤖</span>
+                      Android Download URL (Google Play)
+                    </Label>
+                    <Input
+                      id="android-url"
+                      placeholder="https://play.google.com/store/apps/..."
+                      className="font-mono text-xs h-9"
+                      value={formData.android_download_url || ''}
+                      onChange={(e) => updateFormData({ android_download_url: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="rounded-md bg-purple-50 border border-purple-200 p-2">
+                  <div className="flex gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900">
+                      <strong>Note:</strong> Provide at least one app download URL (iOS or Android)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       </div>
     </div>
   );
 }
-

@@ -6,14 +6,70 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Check } from "lucide-react";
+import { ChevronLeft, Check, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { createCampaign, CreateCampaignRequest } from "@/lib/api/campaign";
 import Step1 from "./step1";
 import Step2 from "./step2";
 import Step3 from "./step3";
 
+// Campaign 表单数据类型
+export interface CampaignFormData {
+  // Step 1
+  campaign_name: string;
+  promotion_objective: 'awareness' | 'consideration' | 'conversion';
+  optimization_goal: string;
+  
+  // Step 2
+  location?: number[];
+  age?: number;
+  gender?: number;
+  languages?: number[];
+  spending_power?: number;
+  operating_system?: number;
+  os_versions?: number[];
+  device_models?: number[];
+  connection_types?: number[];
+  device_price_type: 0 | 1;
+  device_price_min?: number;
+  device_price_max?: number;
+  planned_start_time: string;
+  planned_end_time: string;
+  time_zone?: number;
+  dayparting_type: 0 | 1;
+  dayparting_schedule?: string;
+  frequency_cap_type: 0 | 1 | 2;
+  frequency_cap_times?: number;
+  frequency_cap_days?: number;
+  budget_type: 0 | 1;
+  budget_amount: number;
+  
+  // Step 3
+  website?: string;
+  ios_download_url?: string;
+  android_download_url?: string;
+  attachment_urls?: string[];
+}
+
 export default function CampaignCreation() {
   const router = useRouter();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 表单数据
+  const [formData, setFormData] = useState<CampaignFormData>({
+    campaign_name: '',
+    promotion_objective: 'awareness',
+    optimization_goal: 'reach',
+    device_price_type: 0,
+    planned_start_time: '',
+    planned_end_time: '',
+    dayparting_type: 0,
+    frequency_cap_type: 0,
+    budget_type: 0,
+    budget_amount: 0,
+  });
 
   const steps = [
     { title: "Basic Information", component: Step1 },
@@ -23,18 +79,182 @@ export default function CampaignCreation() {
 
   const CurrentStepComponent = steps[currentStep].component;
 
-  const handleNext = () => {
+  // 更新表单数据
+  const updateFormData = (data: Partial<CampaignFormData>) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+
+  // 验证 Step 1
+  const validateStep1 = (): boolean => {
+    if (!formData.campaign_name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a campaign name",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.promotion_objective || !formData.optimization_goal) {
+      toast({
+        title: "Validation Error",
+        description: "Please select promotion objective and optimization goal",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // 验证 Step 2
+  const validateStep2 = (): boolean => {
+    if (!formData.planned_start_time || !formData.planned_end_time) {
+      toast({
+        title: "Validation Error",
+        description: "Please select start and end time",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (formData.budget_amount <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid budget amount",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (formData.device_price_type === 1) {
+      if (!formData.device_price_min || !formData.device_price_max) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter device price range",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (formData.device_price_min >= formData.device_price_max) {
+        toast({
+          title: "Validation Error",
+          description: "Minimum price must be less than maximum price",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    if (formData.frequency_cap_type === 2) {
+      if (!formData.frequency_cap_times || !formData.frequency_cap_days) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter frequency cap times and days",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // 验证 Step 3
+  const validateStep3 = (): boolean => {
+    // 根据 optimization_goal 检查必填字段
+    if (formData.optimization_goal === 'website' && !formData.website) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter website URL for website promotion",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (formData.optimization_goal === 'app') {
+      if (!formData.ios_download_url && !formData.android_download_url) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter at least one app download URL",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleNext = async () => {
+    // 验证当前步骤
+    if (currentStep === 0 && !validateStep1()) {
+      return;
+    }
+    if (currentStep === 1 && !validateStep2()) {
+      return;
+    }
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Handle submit
-      router.push("/campaign");
+      // 最后一步，验证并提交
+      if (!validateStep3()) {
+        return;
+      }
+      await handleSubmit();
     }
   };
 
   const handlePrev = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // 提交表单
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+
+      // 转换时间格式为 RFC3339（后端期望的格式）
+      const formatToRFC3339 = (datetimeLocal: string): string => {
+        if (!datetimeLocal) return '';
+        // datetime-local 格式: 2025-10-09T02:26
+        // 需要转换为: 2025-10-09T02:26:00+08:00 (带秒和时区)
+        const date = new Date(datetimeLocal);
+        return date.toISOString(); // 转换为 UTC 时间: 2025-10-08T18:26:00.000Z
+      };
+
+      const requestData: CreateCampaignRequest = {
+        ...formData,
+        planned_start_time: formatToRFC3339(formData.planned_start_time),
+        planned_end_time: formatToRFC3339(formData.planned_end_time),
+      };
+
+      const response = await createCampaign(requestData);
+
+      if (response.base_resp.code === 0) {
+        toast({
+          title: "Success",
+          description: "Campaign created successfully",
+        });
+        router.push("/campaign");
+      } else {
+        toast({
+          title: "Error",
+          description: response.base_resp.message || "Failed to create campaign",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create campaign",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -150,7 +370,7 @@ export default function CampaignCreation() {
 
           {/* Content - Only this area scrolls */}
           <div className="flex-1 overflow-y-auto p-4 min-h-0">
-            <CurrentStepComponent />
+            <CurrentStepComponent formData={formData} updateFormData={updateFormData} />
           </div>
         </div>
       </div>
@@ -161,7 +381,7 @@ export default function CampaignCreation() {
           <Button
             variant="outline"
             onClick={handlePrev}
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isSubmitting}
             className="gap-2"
           >
             Previous
@@ -182,8 +402,19 @@ export default function CampaignCreation() {
             ))}
           </div>
 
-          <Button onClick={handleNext} className="gap-2 min-w-[120px]">
-            {currentStep === steps.length - 1 ? "Create Campaign" : "Next Step"}
+          <Button 
+            onClick={handleNext} 
+            className="gap-2 min-w-[120px]"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              currentStep === steps.length - 1 ? "Create Campaign" : "Next Step"
+            )}
           </Button>
         </div>
       </div>

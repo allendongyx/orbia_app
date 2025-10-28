@@ -75,7 +75,7 @@ export default function UserKOLOrders() {
         toast({
           title: "加载失败",
           description: result.base_resp.msg || "加载订单列表失败",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (err) {
@@ -83,7 +83,7 @@ export default function UserKOLOrders() {
       toast({
         title: "错误",
         description: "加载订单列表失败",
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export default function UserKOLOrders() {
       toast({
         title: "提示",
         description: "请填写取消原因",
-        variant: "destructive",
+        variant: "error",
       });
       return;
     }
@@ -126,7 +126,7 @@ export default function UserKOLOrders() {
         toast({
           title: "失败",
           description: result.base_resp.msg || "取消订单失败",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (err) {
@@ -134,7 +134,7 @@ export default function UserKOLOrders() {
       toast({
         title: "错误",
         description: "取消订单失败",
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setCancelling(false);

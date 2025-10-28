@@ -29,6 +29,7 @@ export interface KolOrderInfo {
   cancelled_at?: string;
   created_at: string;
   updated_at: string;
+  conversation_id?: string; // 会话ID，格式为 "CONV_xxx"
 }
 
 // 创建KOL订单请求
@@ -194,6 +195,76 @@ export async function cancelKolOrder(req: CancelKolOrderReq): Promise<CancelKolO
  */
 export async function confirmKolOrderPayment(req: ConfirmKolOrderPaymentReq): Promise<ConfirmKolOrderPaymentResp> {
   return apiRequest<ConfirmKolOrderPaymentResp>('/api/v1/kol-order/payment/confirm', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
+}
+
+// ============ 消息相关 ============
+
+// 消息信息
+export interface OrderMessage {
+  message_id: string;
+  order_id: string;
+  sender_id: number;
+  sender_name: string;
+  sender_avatar?: string;
+  sender_type: 'user' | 'kol';
+  content: string;
+  attachments?: MessageAttachment[];
+  created_at: string;
+}
+
+// 消息附件
+export interface MessageAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
+// 获取订单消息列表请求
+export interface GetOrderMessagesReq {
+  order_id: string;
+  page?: number;
+  page_size?: number;
+}
+
+// 获取订单消息列表响应
+export interface GetOrderMessagesResp {
+  base_resp: BaseResp;
+  messages: OrderMessage[];
+  total: number;
+}
+
+// 发送订单消息请求
+export interface SendOrderMessageReq {
+  order_id: string;
+  content: string;
+  attachments?: MessageAttachment[];
+}
+
+// 发送订单消息响应
+export interface SendOrderMessageResp {
+  base_resp: BaseResp;
+  message?: OrderMessage;
+}
+
+/**
+ * 获取订单消息列表
+ */
+export async function getOrderMessages(req: GetOrderMessagesReq): Promise<GetOrderMessagesResp> {
+  return apiRequest<GetOrderMessagesResp>('/api/v1/kol-order/messages', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
+}
+
+/**
+ * 发送订单消息
+ */
+export async function sendOrderMessage(req: SendOrderMessageReq): Promise<SendOrderMessageResp> {
+  return apiRequest<SendOrderMessageResp>('/api/v1/kol-order/message/send', {
     method: 'POST',
     body: JSON.stringify(req),
   });

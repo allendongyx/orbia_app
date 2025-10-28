@@ -15,8 +15,8 @@ export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
-  pageSize,
-  total,
+  pageSize = 10,
+  total = 0,
 }: PaginationProps) {
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, total);

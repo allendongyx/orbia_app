@@ -170,6 +170,49 @@ export interface GetDictionaryTreeResp {
   tree: DictionaryItemInfo[];
 }
 
+// 批量获取字典项（根据编码列表）
+export interface BatchGetDictionaryItemsByCodesReq {
+  dictionary_code: string;
+  codes: string[];
+}
+
+export interface BatchGetDictionaryItemsByCodesResp {
+  base_resp: BaseResp;
+  items: DictionaryItemInfo[];
+}
+
+// 字典项树形节点
+export interface DictionaryItemTreeNode {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  icon_url?: string;
+  sort_order: number;
+  level: number;
+  status: number;
+  children?: DictionaryItemTreeNode[]; // 子节点
+}
+
+// 字典及其字典项树形结构
+export interface DictionaryWithTree {
+  dictionary: DictionaryInfo; // 字典基本信息
+  tree: DictionaryItemTreeNode[]; // 字典项树形结构
+}
+
+// 批量获取字典和字典项请求（用于前端冷启动）
+export interface GetAllDictionariesWithItemsReq {
+  page?: number; // 页码，默认1
+  page_size?: number; // 每页数量，默认20，最大20
+}
+
+// 批量获取字典和字典项响应
+export interface GetAllDictionariesWithItemsResp {
+  base_resp: BaseResp;
+  dictionaries: DictionaryWithTree[]; // 字典列表（包含树形字典项）
+  page_info: PageInfo; // 分页信息
+}
+
 // ========== API 函数 ==========
 
 // 字典管理
@@ -249,6 +292,25 @@ export async function getDictionaryTree(req: GetDictionaryTreeReq): Promise<GetD
   return apiRequest<GetDictionaryTreeResp>('/api/v1/dictionary/tree', {
     method: 'POST',
     body: JSON.stringify(req),
+  });
+}
+
+// 批量获取字典项（根据编码列表）
+export async function batchGetDictionaryItemsByCodes(req: BatchGetDictionaryItemsByCodesReq): Promise<BatchGetDictionaryItemsByCodesResp> {
+  return apiRequest<BatchGetDictionaryItemsByCodesResp>('/api/v1/dictionary/items/batch', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
+}
+
+// 批量获取所有字典和字典项（用于前端冷启动）
+export async function getAllDictionariesWithItems(req: GetAllDictionariesWithItemsReq = {}): Promise<GetAllDictionariesWithItemsResp> {
+  return apiRequest<GetAllDictionariesWithItemsResp>('/api/v1/dictionary/all', {
+    method: 'POST',
+    body: JSON.stringify({
+      page: req.page || 1,
+      page_size: req.page_size || 20,
+    }),
   });
 }
 

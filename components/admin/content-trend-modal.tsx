@@ -79,9 +79,9 @@ export default function ContentTrendModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="ranking">排名 *</Label>
                 <Input
                   id="ranking"
@@ -94,7 +94,7 @@ export default function ContentTrendModal({
                 <p className="text-xs text-gray-500 mt-1">排名不能重复</p>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="hot_keyword">热点关键词 *</Label>
                 <Input
                   id="hot_keyword"
@@ -106,7 +106,7 @@ export default function ContentTrendModal({
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="value_level">价值等级 *</Label>
               <select
                 id="value_level"
@@ -122,7 +122,7 @@ export default function ContentTrendModal({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="heat">热度值 *</Label>
                 <Input
                   id="heat"
@@ -135,7 +135,7 @@ export default function ContentTrendModal({
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="growth_rate">增长比例 (%) *</Label>
                 <Input
                   id="growth_rate"
@@ -149,7 +149,7 @@ export default function ContentTrendModal({
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="status">状态</Label>
               <select
                 id="status"
