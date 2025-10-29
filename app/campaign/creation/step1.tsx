@@ -138,7 +138,7 @@ export default function Step1({ formData, updateFormData }: Step1Props) {
 
         <RadioGroup 
           value={formData.promotion_objective} 
-          onValueChange={(value) => handleObjectiveChange(value as any)}
+          onValueChange={(value) => handleObjectiveChange(value as 'awareness' | 'consideration' | 'conversion')}
           className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-gray-200 overflow-hidden"
         >
           <Label 

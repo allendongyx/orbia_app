@@ -90,7 +90,7 @@ export default function CampaignCreation() {
       toast({
         title: "Validation Error",
         description: "Please enter a campaign name",
-        variant: "destructive",
+        variant: "error",
       });
       return false;
     }
@@ -99,7 +99,7 @@ export default function CampaignCreation() {
       toast({
         title: "Validation Error",
         description: "Please select promotion objective and optimization goal",
-        variant: "destructive",
+        variant: "error",
       });
       return false;
     }
@@ -113,7 +113,7 @@ export default function CampaignCreation() {
       toast({
         title: "Validation Error",
         description: "Please select start and end time",
-        variant: "destructive",
+        variant: "error",
       });
       return false;
     }
@@ -122,7 +122,7 @@ export default function CampaignCreation() {
       toast({
         title: "Validation Error",
         description: "Please enter a valid budget amount",
-        variant: "destructive",
+        variant: "error",
       });
       return false;
     }
@@ -132,7 +132,7 @@ export default function CampaignCreation() {
         toast({
           title: "Validation Error",
           description: "Please enter device price range",
-          variant: "destructive",
+          variant: "error",
         });
         return false;
       }
@@ -140,7 +140,7 @@ export default function CampaignCreation() {
         toast({
           title: "Validation Error",
           description: "Minimum price must be less than maximum price",
-          variant: "destructive",
+          variant: "error",
         });
         return false;
       }
@@ -151,7 +151,7 @@ export default function CampaignCreation() {
         toast({
           title: "Validation Error",
           description: "Please enter frequency cap times and days",
-          variant: "destructive",
+          variant: "error",
         });
         return false;
       }
@@ -167,7 +167,7 @@ export default function CampaignCreation() {
       toast({
         title: "Validation Error",
         description: "Please enter website URL for website promotion",
-        variant: "destructive",
+        variant: "error",
       });
       return false;
     }
@@ -177,7 +177,7 @@ export default function CampaignCreation() {
         toast({
           title: "Validation Error",
           description: "Please enter at least one app download URL",
-          variant: "destructive",
+          variant: "error",
         });
         return false;
       }
@@ -244,14 +244,14 @@ export default function CampaignCreation() {
         toast({
           title: "Error",
           description: response.base_resp.message || "Failed to create campaign",
-          variant: "destructive",
+          variant: "error",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create campaign",
-        variant: "destructive",
+        description: error instanceof Error ? error.message : "Failed to create campaign",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);

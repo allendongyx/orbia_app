@@ -69,14 +69,14 @@ export default function CampaignPage() {
         toast({
           title: "Error",
           description: response.base_resp.message || "Failed to load campaigns",
-          variant: "destructive",
+          variant: "error",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to load campaigns",
-        variant: "destructive",
+        description: error instanceof Error ? error.message : "Failed to load campaigns",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -111,20 +111,27 @@ export default function CampaignPage() {
         toast({
           title: "Error",
           description: response.base_resp.message || "Failed to update status",
-          variant: "destructive",
+          variant: "error",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update status",
-        variant: "destructive",
+        description: error instanceof Error ? error.message : "Failed to update status",
+        variant: "error",
       });
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const configs: Record<string, any> = {
+    type StatusConfig = {
+      label: string;
+      variant: "default" | "secondary" | "outline";
+      icon: typeof CheckCircle2;
+      className: string;
+    };
+    
+    const configs: Record<string, StatusConfig> = {
       active: {
         label: "Active",
         variant: "default" as const,
@@ -163,7 +170,12 @@ export default function CampaignPage() {
   };
 
   const getObjectiveBadge = (objective: string) => {
-    const configs: Record<string, any> = {
+    type ObjectiveConfig = {
+      label: string;
+      className: string;
+    };
+    
+    const configs: Record<string, ObjectiveConfig> = {
       awareness: { label: "Awareness", className: "bg-blue-100 text-blue-700 border-blue-300" },
       consideration: { label: "Consideration", className: "bg-purple-100 text-purple-700 border-purple-300" },
       conversion: { label: "Conversion", className: "bg-green-100 text-green-700 border-green-300" },
@@ -370,6 +382,8 @@ export default function CampaignPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
+                pageSize={pageSize}
+                total={total}
               />
             </div>
           )}

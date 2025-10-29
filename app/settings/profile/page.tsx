@@ -56,7 +56,7 @@ export default function Profile() {
         toast({
           variant: "error",
           title: "保存失败",
-          description: response.base_resp.status_message || "请重试",
+          description: response.base_resp.message || "请重试",
         });
       }
     } catch (error) {

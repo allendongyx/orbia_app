@@ -797,7 +797,7 @@ export default function Wallet() {
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={categorySpending}
+                      data={categorySpending as unknown as Record<string, unknown>[]}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}

@@ -66,7 +66,7 @@ export default function AdminAdOrdersPage() {
         toast({
           title: "Error",
           description: response.base_resp.message || "Failed to load campaigns",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (error) {
@@ -74,7 +74,7 @@ export default function AdminAdOrdersPage() {
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -109,7 +109,7 @@ export default function AdminAdOrdersPage() {
         toast({
           title: "Error",
           description: response.base_resp.message || "Failed to update status",
-          variant: "destructive",
+          variant: "error",
         });
       }
     } catch (error) {
@@ -117,7 +117,7 @@ export default function AdminAdOrdersPage() {
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };
