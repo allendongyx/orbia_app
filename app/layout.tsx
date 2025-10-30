@@ -20,10 +20,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Orbia - Web3 Marketing Platform",
-  description: "Decentralized marketing platform for Web3",
-  icons: {
-    icon: '/icon.png',
-  },
+  description: "Decentralized marketing platform for Web3"
 };
 
 export default function RootLayout({

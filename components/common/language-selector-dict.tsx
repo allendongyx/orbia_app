@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronDown, Search, X, Loader2 } from "lucide-react";
+import { ChevronDown, Search, X, Loader2, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useDictionaryTree } from "@/hooks/use-dictionary";
 
@@ -11,8 +10,21 @@ interface LanguageSelectorDictProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
-  multiple?: boolean; // 是否支持多选，默认 true
+  multiple?: boolean;
 }
+
+// 自定义复选框组件，避免 Radix UI 的问题
+const CustomCheckbox = ({ checked }: { checked: boolean }) => (
+  <div 
+    className={`
+      h-4 w-4 shrink-0 rounded-sm border transition-colors
+      ${checked ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}
+      flex items-center justify-center
+    `}
+  >
+    {checked && <Check className="h-3 w-3 text-white" />}
+  </div>
+);
 
 export default function LanguageSelectorDict({
   value = [],
@@ -23,10 +35,8 @@ export default function LanguageSelectorDict({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 使用缓存加载字典数据
   const { tree: languages, loading } = useDictionaryTree("LANGUAGE");
 
-  // 过滤语言
   const filteredLanguages = useMemo(() => {
     if (!searchQuery) return languages;
     
@@ -39,19 +49,11 @@ export default function LanguageSelectorDict({
 
   const handleSelect = (languageCode: string) => {
     if (!multiple) {
-      // 单选模式：直接设置为选中的项
       const isSelected = value.includes(languageCode);
-      if (isSelected) {
-        // 如果已经选中，则取消选中
-        onChange?.([]);
-      } else {
-        // 否则选中新项（替换之前的选中）
-        onChange?.([languageCode]);
-      }
+      onChange?.(isSelected ? [] : [languageCode]);
       return;
     }
 
-    // 多选模式：原有逻辑
     const newValue = [...value];
     const index = newValue.indexOf(languageCode);
 
@@ -77,7 +79,6 @@ export default function LanguageSelectorDict({
 
   return (
     <div className="relative">
-      {/* 触发器 */}
       <div
         className="min-h-[38px] w-full border border-gray-200 rounded-md bg-white px-3 py-2 text-sm cursor-pointer hover:border-gray-300 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
@@ -91,9 +92,7 @@ export default function LanguageSelectorDict({
                 key={code}
                 variant="secondary"
                 className="pl-2 pr-1.5 py-0.5 gap-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <span>{label}</span>
                 <X
@@ -114,10 +113,8 @@ export default function LanguageSelectorDict({
         />
       </div>
 
-      {/* 下拉面板 */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[400px] flex flex-col">
-          {/* 搜索框 */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -131,7 +128,6 @@ export default function LanguageSelectorDict({
             </div>
           </div>
 
-          {/* 语言列表 */}
           <div className="overflow-y-auto max-h-[280px]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -158,12 +154,7 @@ export default function LanguageSelectorDict({
                           handleSelect(language.code);
                         }}
                       >
-                        {multiple && (
-                          <Checkbox
-                            checked={isSelected}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        )}
+                        {multiple && <CustomCheckbox checked={isSelected} />}
                         <span className="text-sm font-medium flex-1">{language.name}</span>
                       </div>
                     );
@@ -173,7 +164,6 @@ export default function LanguageSelectorDict({
             )}
           </div>
 
-          {/* 底部操作栏 */}
           {value.length > 0 && (
             <div className="p-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
               <span className="text-xs text-muted-foreground">
@@ -193,7 +183,6 @@ export default function LanguageSelectorDict({
         </div>
       )}
 
-      {/* 点击外部关闭 */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9998]"
@@ -203,4 +192,3 @@ export default function LanguageSelectorDict({
     </div>
   );
 }
-

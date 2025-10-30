@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, Search, X, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, X, Loader2, Check, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DictionaryItemInfo } from "@/lib/api/dictionary";
 import { useDictionaryTree } from "@/hooks/use-dictionary";
@@ -12,8 +11,32 @@ interface LocationSelectorDictProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
-  multiple?: boolean; // 是否支持多选，默认 true
+  multiple?: boolean;
 }
+
+// 自定义复选框组件，避免 Radix UI 的问题
+const CustomCheckbox = ({ 
+  checked, 
+  partial, 
+  disabled 
+}: { 
+  checked: boolean; 
+  partial?: boolean; 
+  disabled?: boolean;
+}) => (
+  <div 
+    className={`
+      h-4 w-4 shrink-0 rounded-sm border transition-colors
+      ${disabled ? 'cursor-not-allowed opacity-50 bg-gray-100' : ''}
+      ${checked ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}
+      ${partial && !checked ? 'bg-gray-300 border-gray-300' : ''}
+      flex items-center justify-center
+    `}
+  >
+    {checked && <Check className="h-3 w-3 text-white" />}
+    {partial && !checked && <Minus className="h-3 w-3 text-white" />}
+  </div>
+);
 
 export default function LocationSelectorDict({
   value = [],
@@ -25,18 +48,19 @@ export default function LocationSelectorDict({
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // 确保 value 始终是数组
   const valueArray = Array.isArray(value) ? value : [];
-
-  // 使用缓存加载字典数据
+  
   const { tree: countries, loading } = useDictionaryTree("COUNTRY");
 
-  // 过滤国家和地区
-  const filteredCountries = useMemo(() => {
-    if (!searchQuery) return countries;
+  const { filteredCountries, autoExpandedItems } = useMemo(() => {
+    if (!searchQuery) {
+      return { filteredCountries: countries, autoExpandedItems: new Set<string>() };
+    }
     
     const query = searchQuery.toLowerCase();
-    return countries
+    const autoExpanded = new Set<string>();
+    
+    const filtered = countries
       .map(country => {
         const countryMatch = 
           country.name.toLowerCase().includes(query) ||
@@ -47,6 +71,10 @@ export default function LocationSelectorDict({
           (region.code && region.code.toLowerCase().includes(query))
         );
 
+        if (matchedChildren.length > 0) {
+          autoExpanded.add(country.code);
+        }
+
         if (countryMatch || matchedChildren.length > 0) {
           return {
             ...country,
@@ -56,23 +84,15 @@ export default function LocationSelectorDict({
         return null;
       })
       .filter(Boolean) as DictionaryItemInfo[];
+      
+    return { filteredCountries: filtered, autoExpandedItems: autoExpanded };
   }, [searchQuery, countries]);
 
-  // 自动展开搜索结果中的国家
-  useMemo(() => {
-    if (searchQuery) {
-      const newExpanded = new Set<string>();
-      filteredCountries.forEach(country => {
-        if ((country.children || []).some(r => 
-          r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (r.code && r.code.toLowerCase().includes(searchQuery.toLowerCase()))
-        )) {
-          newExpanded.add(country.code);
-        }
-      });
-      setExpandedItems(newExpanded);
-    }
-  }, [searchQuery, filteredCountries]);
+  const effectiveExpandedItems = useMemo(() => {
+    const combined = new Set(expandedItems);
+    autoExpandedItems.forEach(code => combined.add(code));
+    return combined;
+  }, [expandedItems, autoExpandedItems]);
 
   const toggleItem = (code: string) => {
     const newExpanded = new Set(expandedItems);
@@ -86,19 +106,11 @@ export default function LocationSelectorDict({
 
   const handleSelect = (code: string, isCountry: boolean = false) => {
     if (!multiple) {
-      // 单选模式：直接设置为选中的项
       const isSelected = valueArray.includes(code);
-      if (isSelected) {
-        // 如果已经选中，则取消选中
-        onChange?.([]);
-      } else {
-        // 否则选中新项（替换之前的选中）
-        onChange?.([code]);
-      }
+      onChange?.(isSelected ? [] : [code]);
       return;
     }
 
-    // 多选模式：原有逻辑
     const newValue = [...valueArray];
     const index = newValue.indexOf(code);
 
@@ -110,15 +122,12 @@ export default function LocationSelectorDict({
       const hasCountry = newValue.includes(code);
       
       if (hasCountry) {
-        // 取消选择国家和所有地区
         onChange?.(newValue.filter(v => v !== code && !allRegionCodes.includes(v)));
       } else {
-        // 选择国家（移除该国家的所有地区，只保留国家）
         const filtered = newValue.filter(v => !allRegionCodes.includes(v));
         onChange?.([...filtered, code]);
       }
     } else {
-      // 选择地区
       const regionCountry = countries.find(c => 
         (c.children || []).some(r => r.code === code)
       );
@@ -126,26 +135,17 @@ export default function LocationSelectorDict({
       if (!regionCountry) return;
 
       if (index > -1) {
-        // 取消选择地区
         newValue.splice(index, 1);
+        onChange?.(newValue);
       } else {
-        // 选择地区：移除国家选择（如果有），添加地区
         const filtered = newValue.filter(v => v !== regionCountry.code);
-        filtered.push(code);
-        onChange?.(filtered);
-        return;
+        onChange?.([...filtered, code]);
       }
-      onChange?.(newValue);
     }
   };
 
-  const isCountrySelected = (code: string) => {
-    return valueArray.includes(code);
-  };
-
-  const isRegionSelected = (code: string) => {
-    return valueArray.includes(code);
-  };
+  const isCountrySelected = (code: string) => valueArray.includes(code);
+  const isRegionSelected = (code: string) => valueArray.includes(code);
 
   const isCountryPartiallySelected = (code: string) => {
     const country = countries.find(c => c.code === code);
@@ -157,13 +157,11 @@ export default function LocationSelectorDict({
 
   const getSelectedLabels = () => {
     return valueArray.map(code => {
-      // 检查是否是国家
       const country = countries.find(c => c.code === code);
       if (country) {
         return { code, label: country.name, icon: country.icon_url };
       }
       
-      // 检查是否是地区
       for (const c of countries) {
         const region = (c.children || []).find(r => r.code === code);
         if (region) {
@@ -179,9 +177,16 @@ export default function LocationSelectorDict({
     onChange?.(valueArray.filter(v => v !== code));
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setSearchQuery(newQuery);
+    if (!newQuery) {
+      setExpandedItems(new Set());
+    }
+  };
+
   return (
     <div className="relative">
-      {/* 触发器 */}
       <div
         className="min-h-[38px] w-full border border-gray-200 rounded-md bg-white px-3 py-2 text-sm cursor-pointer hover:border-gray-300 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
@@ -195,9 +200,7 @@ export default function LocationSelectorDict({
                 key={code}
                 variant="secondary"
                 className="pl-2 pr-1.5 py-0.5 gap-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 {icon && <span>{icon}</span>}
                 <span>{label}</span>
@@ -219,24 +222,21 @@ export default function LocationSelectorDict({
         />
       </div>
 
-      {/* 下拉面板 */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[400px] flex flex-col">
-          {/* 搜索框 */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="输入目标地域"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="pl-9 h-9"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
           </div>
 
-          {/* 国家和地区列表 */}
           <div className="overflow-y-auto max-h-[320px]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -250,14 +250,13 @@ export default function LocationSelectorDict({
                   </div>
                 ) : (
                   filteredCountries.map(country => {
-                    const isExpanded = expandedItems.has(country.code);
+                    const isExpanded = effectiveExpandedItems.has(country.code);
                     const isSelected = isCountrySelected(country.code);
                     const isPartial = isCountryPartiallySelected(country.code);
                     const hasChildren = (country.children || []).length > 0;
 
                     return (
                       <div key={country.code} className="mb-1">
-                        {/* 国家行 */}
                         <div
                           className={`flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer transition-colors ${
                             isSelected ? "bg-blue-50" : ""
@@ -268,10 +267,9 @@ export default function LocationSelectorDict({
                           }}
                         >
                           {multiple && (
-                            <Checkbox
-                              checked={isSelected}
-                              className={isPartial && !isSelected ? "data-[state=unchecked]:bg-gray-300" : ""}
-                              onClick={(e) => e.stopPropagation()}
+                            <CustomCheckbox 
+                              checked={isSelected} 
+                              partial={isPartial}
                             />
                           )}
                           {country.icon_url && <span className="text-base">{country.icon_url}</span>}
@@ -294,7 +292,6 @@ export default function LocationSelectorDict({
                           )}
                         </div>
 
-                        {/* 地区列表 */}
                         {hasChildren && isExpanded && (
                           <div className="ml-9 mt-1 space-y-1">
                             {(country.children || []).map(region => {
@@ -318,10 +315,9 @@ export default function LocationSelectorDict({
                                   }}
                                 >
                                   {multiple && (
-                                    <Checkbox
+                                    <CustomCheckbox 
                                       checked={isRegionSel || isCountrySel}
                                       disabled={isDisabled}
-                                      onClick={(e) => e.stopPropagation()}
                                     />
                                   )}
                                   <span className="text-sm flex-1">{region.name}</span>
@@ -338,7 +334,6 @@ export default function LocationSelectorDict({
             )}
           </div>
 
-          {/* 底部操作栏 */}
           {valueArray.length > 0 && (
             <div className="p-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
               <span className="text-xs text-muted-foreground">
@@ -358,7 +353,6 @@ export default function LocationSelectorDict({
         </div>
       )}
 
-      {/* 点击外部关闭 */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9998]"
@@ -368,4 +362,3 @@ export default function LocationSelectorDict({
     </div>
   );
 }
-

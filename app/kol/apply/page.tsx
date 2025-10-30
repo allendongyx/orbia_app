@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,111 +16,127 @@ import { useAuth } from "@/contexts/auth-context";
 import LocationSelectorDict from "@/components/common/location-selector-dict";
 import LanguageSelectorDict from "@/components/common/language-selector-dict";
 import { ImgsSelector, EmojiItem } from "@/components/common/imgs-selector";
+import { useDictionaryTree } from "@/hooks/use-dictionary";
 import avatarEmojis from "@/data/avatar-emojis.json";
 
 export default function ApplyKOLPage() {
   const router = useRouter();
-  const { isLoggedIn, isLoading: authLoading, user } = useAuth();
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kolInfo, setKolInfo] = useState<KolInfo | null>(null);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
-  // 表单数据 (country 在 UI 中使用数组，提交时转换为字符串)
+  const { tree: locationTree } = useDictionaryTree("COUNTRY");
+  const { tree: languageTree } = useDictionaryTree("LANGUAGE");
+
   const [formData, setFormData] = useState({
     display_name: "",
     description: "",
-    country: [] as string[],
+    country: [] as number[],
     avatar_url: "",
     tiktok_url: "",
     youtube_url: "",
     x_url: "",
     discord_url: "",
-    language_codes: [] as string[],
+    languages: [] as number[],
     tags: [] as string[],
   });
 
   const [tagInput, setTagInput] = useState("");
 
-  useEffect(() => {
-    // 等待认证状态加载完成
-    if (authLoading) {
-      return;
-    }
+  const countryCodes = useMemo(() => {
+    if (!formData.country.length || !locationTree.length) return [];
+    return formData.country
+      .map(id => {
+        const country = locationTree.find(c => c.id === id);
+        if (country) return country.code;
+        for (const c of locationTree) {
+          const region = (c.children || []).find(r => r.id === id);
+          if (region) return region.code;
+        }
+        return null;
+      })
+      .filter((code): code is string => code !== null);
+  }, [formData.country, locationTree]);
 
-    // 如果未登录，跳转到 marketplace
+  const languageCodes = useMemo(() => {
+    if (!formData.languages.length || !languageTree.length) return [];
+    return formData.languages
+      .map(id => {
+        const lang = languageTree.find(l => l.id === id);
+        return lang ? lang.code : null;
+      })
+      .filter((code): code is string => code !== null);
+  }, [formData.languages, languageTree]);
+
+  useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn) {
       router.push("/kol/marketplace");
       return;
     }
-
-    // 检查用户是否已经申请过
     checkKolStatus();
-  }, [isLoggedIn, authLoading]);
+  }, [isLoggedIn, authLoading, router]);
 
   const checkKolStatus = async () => {
     setLoading(true);
     try {
       const result = await getKolInfo({});
-      // 如果成功返回且有 KOL 信息，说明用户已经申请过
       if (isSuccessResponse(result.base_resp) && result.kol_info) {
         setKolInfo(result.kol_info);
       } else {
-        // 接口返回成功但没有 kol_info，说明用户还没有申请
         setKolInfo(null);
       }
-    } catch (err) {
-      // 接口调用失败（例如 404），说明用户还没有申请过
-      console.log("User has not applied as KOL yet");
+    } catch {
       setKolInfo(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // 添加标签
   const addTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }));
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
       setTagInput("");
     }
   };
 
-  // 删除标签
   const removeTag = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((t) => t !== tag),
-    }));
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
   };
 
-  // 处理语言选择
-  const handleLanguageChange = (languageCodes: string[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      language_codes: languageCodes,
-    }));
+  const handleCountryChange = (codes: string[]) => {
+    const ids = codes.map(code => {
+      const country = locationTree.find(c => c.code === code);
+      if (country) return country.id;
+      for (const c of locationTree) {
+        const region = (c.children || []).find(r => r.code === code);
+        if (region) return region.id;
+      }
+      return null;
+    }).filter((id): id is number => id !== null);
+    setFormData(prev => ({ ...prev, country: ids }));
   };
 
-  // 处理头像选择
+  const handleLanguageChange = (codes: string[]) => {
+    const ids = codes.map(code => {
+      const lang = languageTree.find(l => l.code === code);
+      return lang ? lang.id : null;
+    }).filter((id): id is number => id !== null);
+    setFormData(prev => ({ ...prev, languages: ids }));
+  };
+
   const handleAvatarChange = (avatarUrl: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      avatar_url: avatarUrl,
-    }));
+    setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
     setShowAvatarSelector(false);
   };
 
-  // 提交申请
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // 验证必填字段
     if (!formData.display_name) {
       setError("Please enter your display name");
       return;
@@ -133,7 +149,7 @@ export default function ApplyKOLPage() {
       setError("Please select your country");
       return;
     }
-    if (formData.language_codes.length === 0) {
+    if (formData.languages.length === 0) {
       setError("Please select at least one language");
       return;
     }
@@ -141,19 +157,46 @@ export default function ApplyKOLPage() {
     setSubmitting(true);
 
     try {
-      // language_names 使用 language_codes（字典的 code）
-      const language_names = formData.language_codes;
-      
-      // 转换数据格式：country 从数组转为字符串（取第一个）
+      let countryCode = "";
+      if (formData.country.length > 0) {
+        const countryId = formData.country[0];
+        const country = locationTree.find(c => c.id === countryId);
+        if (country) {
+          countryCode = country.code;
+        } else {
+          for (const c of locationTree) {
+            const region = (c.children || []).find(r => r.id === countryId);
+            if (region) {
+              countryCode = region.code;
+              break;
+            }
+          }
+        }
+      }
+
+      const language_codes = formData.languages
+        .map(id => {
+          const lang = languageTree.find(l => l.id === id);
+          return lang ? lang.code : null;
+        })
+        .filter((code): code is string => code !== null);
+
       const submitData: ApplyKolReq = {
-        ...formData,
-        country: formData.country[0] || "",
-        language_names,
+        display_name: formData.display_name,
+        description: formData.description,
+        country: countryCode,
+        avatar_url: formData.avatar_url,
+        tiktok_url: formData.tiktok_url,
+        youtube_url: formData.youtube_url,
+        x_url: formData.x_url,
+        discord_url: formData.discord_url,
+        language_codes,
+        language_names: language_codes,
+        tags: formData.tags,
       };
-      
+
       const result = await applyKol(submitData);
       if (isSuccessResponse(result.base_resp)) {
-        // 申请成功，刷新状态
         await checkKolStatus();
       } else {
         setError(result.base_resp.message || "Application failed");
@@ -176,17 +219,11 @@ export default function ApplyKOLPage() {
     );
   }
 
-  // 如果已经申请过，显示申请状态
   if (kolInfo) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/kol/marketplace")}
-            className="gap-2"
-          >
+          <Button variant="ghost" onClick={() => router.push("/kol/marketplace")} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to Marketplace
           </Button>
@@ -195,28 +232,18 @@ export default function ApplyKOLPage() {
         <Card>
           <CardHeader>
             <CardTitle>KOL Application Status</CardTitle>
-            <CardDescription>
-              Your KOL application has been submitted
-            </CardDescription>
+            <CardDescription>Your KOL application has been submitted</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* 状态显示 */}
             <div className="flex items-center justify-center py-8">
               {kolInfo.status === 'approved' ? (
                 <div className="text-center">
                   <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                     <CheckCircle2 className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Application Approved!
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Congratulations! Your KOL application has been approved.
-                  </p>
-                  <Button
-                    onClick={() => router.push("/kol/profile")}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700"
-                  >
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Application Approved!</h3>
+                  <p className="text-gray-600 mb-6">Congratulations! Your KOL application has been approved.</p>
+                  <Button onClick={() => router.push("/kol/profile")} className="bg-gradient-to-r from-blue-600 to-blue-700">
                     Go to Profile
                   </Button>
                 </div>
@@ -225,16 +252,9 @@ export default function ApplyKOLPage() {
                   <div className="h-16 w-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-4">
                     <Clock className="h-8 w-8 text-yellow-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Application Under Review
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Your application is currently being reviewed by our team. We&apos;ll notify you once it&apos;s processed.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/kol/marketplace")}
-                  >
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Application Under Review</h3>
+                  <p className="text-gray-600 mb-6">Your application is currently being reviewed by our team.</p>
+                  <Button variant="outline" onClick={() => router.push("/kol/marketplace")}>
                     Back to Marketplace
                   </Button>
                 </div>
@@ -243,31 +263,18 @@ export default function ApplyKOLPage() {
                   <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                     <XCircle className="h-8 w-8 text-red-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Application Rejected
-                  </h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Application Rejected</h3>
                   {kolInfo.reject_reason && (
                     <p className="text-gray-600 mb-4">
                       <strong>Reason:</strong> {kolInfo.reject_reason}
                     </p>
                   )}
-                  <p className="text-gray-600 mb-6">
-                    Please review the feedback and consider reapplying.
-                  </p>
+                  <p className="text-gray-600 mb-6">Please review the feedback and consider reapplying.</p>
                   <div className="flex gap-3 justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push("/kol/marketplace")}
-                    >
+                    <Button variant="outline" onClick={() => router.push("/kol/marketplace")}>
                       Back to Marketplace
                     </Button>
-                    <Button
-                      onClick={() => {
-                        setKolInfo(null);
-                        // 可以选择重新申请
-                      }}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700"
-                    >
+                    <Button onClick={() => setKolInfo(null)} className="bg-gradient-to-r from-blue-600 to-blue-700">
                       Reapply
                     </Button>
                   </div>
@@ -275,7 +282,6 @@ export default function ApplyKOLPage() {
               )}
             </div>
 
-            {/* 申请信息概览 */}
             <div className="border-t pt-6">
               <h4 className="font-semibold text-gray-900 mb-4">Application Details</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -305,9 +311,7 @@ export default function ApplyKOLPage() {
                   <p className="text-gray-500 text-sm mb-2">Tags</p>
                   <div className="flex flex-wrap gap-2">
                     {kolInfo.tags.map((tag, idx) => (
-                      <Badge key={idx} variant="secondary">
-                        {tag.tag}
-                      </Badge>
+                      <Badge key={idx} variant="secondary">{tag.tag}</Badge>
                     ))}
                   </div>
                 </div>
@@ -319,16 +323,10 @@ export default function ApplyKOLPage() {
     );
   }
 
-  // 申请表单
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/kol/marketplace")}
-          className="gap-2"
-        >
+        <Button variant="ghost" onClick={() => router.push("/kol/marketplace")} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Marketplace
         </Button>
@@ -343,81 +341,50 @@ export default function ApplyKOLPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 提示信息 */}
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Please fill out all required fields (*). Your application will be reviewed by our team within 2-3 business days.
+                Please fill out all required fields (*). Your application will be reviewed within 2-3 business days.
               </AlertDescription>
             </Alert>
 
-            {/* 基本信息 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
 
-              {/* 头像 - 放在首位 */}
               <div>
-                <Label htmlFor="avatar_url">
-                  Avatar <span className="text-red-500">*</span>
-                </Label>
+                <Label>Avatar <span className="text-red-500">*</span></Label>
                 <div className="flex items-center gap-4 mt-1.5">
                   <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-gray-200">
                     {formData.avatar_url ? (
-                      <img
-                        src={formData.avatar_url}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={formData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold text-lg">
                         {formData.display_name ? formData.display_name.slice(0, 2).toUpperCase() : "??"}
                       </div>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowAvatarSelector(true)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setShowAvatarSelector(true)}>
                     {formData.avatar_url ? "Change Avatar" : "Select Avatar"}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Choose an emoji or upload your own image
-                </p>
+                <p className="text-xs text-gray-500 mt-2">Choose an emoji or upload your own image</p>
               </div>
 
               <div>
-                <Label htmlFor="display_name">
-                  Display Name <span className="text-red-500">*</span>
-                </Label>
+                <Label>Display Name <span className="text-red-500">*</span></Label>
                 <Input
-                  id="display_name"
                   value={formData.display_name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      display_name: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
                   placeholder="Enter your public display name"
                   className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">
-                  Bio / Description <span className="text-red-500">*</span>
-                </Label>
+                <Label>Bio / Description <span className="text-red-500">*</span></Label>
                 <Textarea
-                  id="description"
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Tell us about yourself and your content..."
                   rows={4}
                   className="mt-1.5"
@@ -425,122 +392,84 @@ export default function ApplyKOLPage() {
               </div>
 
               <div>
-                <Label htmlFor="country">
-                  Country <span className="text-red-500">*</span>
-                </Label>
+                <Label>Country <span className="text-red-500">*</span></Label>
                 <div className="mt-1.5">
                   <LocationSelectorDict
-                    value={formData.country}
-                    onChange={(value) =>
-                      setFormData((prev) => ({ ...prev, country: value.slice(0, 1) }))
-                    }
-                    placeholder="Select your country"
+                    value={countryCodes}
+                    onChange={handleCountryChange}
+                    placeholder="Select countries or regions"
+                    multiple={true}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Please select only one country
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Select one or more countries/regions</p>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="languages">
-                  Languages <span className="text-red-500">*</span>
-                </Label>
+                <Label>Languages <span className="text-red-500">*</span></Label>
                 <div className="mt-1.5">
                   <LanguageSelectorDict
-                    value={formData.language_codes}
+                    value={languageCodes}
                     onChange={handleLanguageChange}
-                    placeholder="选择语言"
+                    placeholder="Select languages"
+                    multiple={true}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Select the languages you can create content in
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Select the languages you can create content in</p>
                 </div>
               </div>
             </div>
 
-            {/* 社交账号 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Social Media</h3>
-              <p className="text-sm text-gray-600">
-                Link your social media accounts (at least one is recommended)
-              </p>
+              <p className="text-sm text-gray-600">Link your social media accounts (at least one is recommended)</p>
 
               <div>
-                <Label htmlFor="tiktok_url">TikTok URL</Label>
+                <Label>TikTok URL</Label>
                 <Input
-                  id="tiktok_url"
                   type="url"
                   value={formData.tiktok_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      tiktok_url: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, tiktok_url: e.target.value }))}
                   placeholder="https://www.tiktok.com/@username"
                   className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="youtube_url">YouTube URL</Label>
+                <Label>YouTube URL</Label>
                 <Input
-                  id="youtube_url"
                   type="url"
                   value={formData.youtube_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      youtube_url: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, youtube_url: e.target.value }))}
                   placeholder="https://www.youtube.com/@username"
                   className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="x_url">X (Twitter) URL</Label>
+                <Label>X (Twitter) URL</Label>
                 <Input
-                  id="x_url"
                   type="url"
                   value={formData.x_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      x_url: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, x_url: e.target.value }))}
                   placeholder="https://x.com/username"
                   className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="discord_url">Discord URL</Label>
+                <Label>Discord URL</Label>
                 <Input
-                  id="discord_url"
                   type="url"
                   value={formData.discord_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      discord_url: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setFormData(prev => ({ ...prev, discord_url: e.target.value }))}
                   placeholder="https://discord.gg/invite"
                   className="mt-1.5"
                 />
               </div>
             </div>
 
-            {/* 标签 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Content Tags</h3>
-              <p className="text-sm text-gray-600">
-                Add tags to describe your content focus (e.g., DeFi, NFT, GameFi)
-              </p>
+              <p className="text-sm text-gray-600">Add tags to describe your content focus (e.g., DeFi, NFT, GameFi)</p>
 
               <div className="flex gap-2">
                 <Input
@@ -554,25 +483,15 @@ export default function ApplyKOLPage() {
                   }}
                   placeholder="Add a tag..."
                 />
-                <Button type="button" onClick={addTag} variant="outline">
-                  Add
-                </Button>
+                <Button type="button" onClick={addTag} variant="outline">Add</Button>
               </div>
 
               {formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="pl-3 pr-1 py-1.5 gap-1"
-                    >
+                    <Badge key={tag} variant="secondary" className="pl-3 pr-1 py-1.5 gap-1">
                       {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
-                      >
+                      <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
                         <XCircle className="h-3 w-3" />
                       </button>
                     </Badge>
@@ -617,7 +536,6 @@ export default function ApplyKOLPage() {
         </CardContent>
       </Card>
 
-      {/* Avatar Selector */}
       <ImgsSelector
         open={showAvatarSelector}
         onOpenChange={setShowAvatarSelector}
@@ -633,4 +551,3 @@ export default function ApplyKOLPage() {
     </div>
   );
 }
-
